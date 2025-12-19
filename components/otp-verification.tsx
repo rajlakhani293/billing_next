@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import toast from "react-hot-toast"
 import { Button } from "@/components/ui/button"
 import {
@@ -8,11 +8,11 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp"
-import { MdEdit,MdOutlineDangerous } from "react-icons/md"
+import { MdEdit, MdOutlineDangerous } from "react-icons/md"
+import { NEXT_OTP_ATTEMPT_LIMIT, NEXT_OTP_TIMER_SECONDS } from "./constants"
 
-// --- Constants ---
-const OTP_LIMIT = 3
-const OTP_TIMER_SECONDS = 3
+const OTP_ATTEMPT_LIMIT = NEXT_OTP_ATTEMPT_LIMIT;
+const OTP_TIMER_SECONDS = NEXT_OTP_TIMER_SECONDS;
 
 interface OTPVerificationProps {
   mobileNumber: string
@@ -25,10 +25,10 @@ interface OTPVerificationProps {
   isBlocked: boolean
 }
 
-export function OTPVerification({ 
-  mobileNumber, 
-  onBack, 
-  onSuccess, 
+export function OTPVerification({
+  mobileNumber,
+  onBack,
+  onSuccess,
   className,
   onSendOTP,
   onVerifyOTP,
@@ -37,68 +37,53 @@ export function OTPVerification({
 }: OTPVerificationProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [otpError, setOtpError] = useState(false)
-  const [timer, setTimer] = useState(OTP_TIMER_SECONDS)
-  const [canResend, setCanResend] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [timer, setTimer] = useState(0)
+  const [canResend, setCanResend] = useState(true)
   const [otpValue, setOtpValue] = useState("")
-  const [devOtp, setDevOtp] = useState("123456") 
+  const [devOtp, setDevOtp] = useState("123456")
 
-  // Timer effect for OTP resend
   useEffect(() => {
-    // If blocked, no timer needed
-    if (isBlocked) {
-      setTimer(0)
-      setCanResend(false)
+    if (timer <= 0) {
+      setCanResend(true)
       return
     }
 
-    let interval: NodeJS.Timeout
-    if (!canResend && timer > 0) {
-      interval = setInterval(() => {
-        setTimer((prev) => {
-          if (prev <= 1) {
-            // Timer finished, check if this was the 3rd attempt
-            if (currentAttempts >= OTP_LIMIT) {
-              // Show OTP limit message after timer finishes on 3rd attempt
-              toast.error("Too many failed OTP requests. OTP limit reached.")
-              setCanResend(false)
-            } else {
-              setCanResend(true)
-            }
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-    }
-    return () => clearInterval(interval)
-  }, [canResend, timer, isBlocked, currentAttempts])
+    const interval = setInterval(() => {
+      setTimer(prev => prev - 1)
+    }, 1000)
 
-  // Resend OTP function (calls the parent's logic)
+    return () => clearInterval(interval)
+  }, [timer])
+
+
   const resendOtp = async () => {
     if (isBlocked) {
       toast.error("You are blocked from requesting more OTPs.")
       return
     }
 
-    if (!canResend) {
-      toast.error(`Please wait ${timer} seconds before requesting again`)
+    if (currentAttempts >= OTP_ATTEMPT_LIMIT) {
+      toast.error("OTP limit reached. Please try later.")
+      setCanResend(false)
       return
     }
-    
-    setIsLoading(true)
-    setCanResend(false) 
 
-    const success = await onSendOTP(mobileNumber, true)
-    
-    if (success) {
-      setTimer(OTP_TIMER_SECONDS)
-      setDevOtp("123456") 
-    } else {
-      setCanResend(true) 
+    if (timer > 0) {
+      toast.error(`Please wait ${timer}s`)
+      return
     }
 
-    setIsLoading(false)
+    setCanResend(false)
+    setTimer(OTP_TIMER_SECONDS)
+
+    const success = await onSendOTP(mobileNumber, true)
+
+    if (!success) {
+      setTimer(0)
+    }
   }
+
 
   // Verify OTP function (calls the parent's logic)
   const handleVerifyOTP = async (otp: string) => {
@@ -109,10 +94,12 @@ export function OTPVerification({
 
     setIsLoading(true)
     setOtpError(false)
-    
-    const isSuccess = await onVerifyOTP(otp) 
+    setIsSuccess(false)
+
+    const isSuccess = await onVerifyOTP(otp)
 
     if (isSuccess) {
+      setIsSuccess(true)
       toast.success("OTP Verified Successfully!")
       setTimeout(() => {
         onSuccess()
@@ -121,7 +108,7 @@ export function OTPVerification({
       setOtpError(true)
       toast.error("Invalid or expired OTP")
     }
-    
+
     setIsLoading(false)
   }
 
@@ -135,13 +122,13 @@ export function OTPVerification({
           </p>
         </div>
       )}
-      
+
       {/* Header */}
       <div className="text-center">
         <h2 className="text-2xl font-bold">Enter verification code</h2>
         <div className="flex items-center justify-center gap-2 mt-2">
           <p className="text-base text-gray-700 dark:text-gray-300">
-            We sent a 6-digit code to 
+            We sent a 6-digit code to
           </p>
           <p className="text-base font-medium text-gray-900 dark:text-white">
             +91 {mobileNumber}
@@ -153,36 +140,43 @@ export function OTPVerification({
             className="text-black hover:text-black/80 transition disabled:opacity-50 dark:text-white dark:hover:text-gray-300"
             aria-label="Edit Mobile Number"
           >
-           <MdEdit className="size-4"/>
+            <MdEdit className="size-4" />
           </button>
         </div>
       </div>
 
       {/* OTP Input */}
       <div className="flex justify-center">
-        <InputOTP 
-          maxLength={6} 
-          id="otp" 
-          required 
+        <InputOTP
+          maxLength={6}
+          id="otp"
+          required
           className="gap-3"
           value={otpValue}
           onChange={(value) => {
             setOtpValue(value)
             setOtpError(false) // Clear error on change
+            setIsSuccess(false) // Clear success on change
           }}
           onComplete={handleVerifyOTP} // Auto-verify on completion
         >
           <InputOTPGroup>
-            <InputOTPSlot index={0} className="h-12 w-12 text-xl" />
-            <InputOTPSlot index={1} className="h-12 w-12 text-xl" />
-            <InputOTPSlot index={2} className="h-12 w-12 text-xl" />
-            <InputOTPSlot index={3} className="h-12 w-12 text-xl" />
-            <InputOTPSlot index={4} className="h-12 w-12 text-xl" />
-            <InputOTPSlot index={5} className="h-12 w-12 text-xl" />
+            <InputOTPSlot index={0} className={`h-12 w-12 text-xl ${otpError ? 'border-red-500 text-red-500' : isSuccess ? 'border-green-500' : ''
+              }`} />
+            <InputOTPSlot index={1} className={`h-12 w-12 text-xl ${otpError ? 'border-red-500 text-red-500' : isSuccess ? 'border-green-500' : ''
+              }`} />
+            <InputOTPSlot index={2} className={`h-12 w-12 text-xl ${otpError ? 'border-red-500 text-red-500' : isSuccess ? 'border-green-500' : ''
+              }`} />
+            <InputOTPSlot index={3} className={`h-12 w-12 text-xl ${otpError ? 'border-red-500 text-red-500' : isSuccess ? 'border-green-500' : ''
+              }`} />
+            <InputOTPSlot index={4} className={`h-12 w-12 text-xl ${otpError ? 'border-red-500 text-red-500' : isSuccess ? 'border-green-500' : ''
+              }`} />
+            <InputOTPSlot index={5} className={`h-12 w-12 text-xl ${otpError ? 'border-red-500 text-red-500' : isSuccess ? 'border-green-500' : ''
+              }`} />
           </InputOTPGroup>
         </InputOTP>
       </div>
-      
+
       {/* Error State */}
       {otpError && (
         <p className="text-sm text-center text-red-600 dark:text-red-400">
@@ -192,39 +186,57 @@ export function OTPVerification({
 
       {/* Action Buttons & Resend Logic */}
       <div className="space-y-4">
-        <Button 
-          onClick={() => handleVerifyOTP(otpValue)}
-          disabled={isLoading || isBlocked || otpValue.length !== 6}
-          className="w-full"
-        >
-          {isLoading ? "Verifying..." : "Verify & Continue"}
-        </Button>
-
         {!isBlocked ? (
-          <div className="flex items-center justify-center gap-1 text-center">
-            <p className="text-sm text-muted-foreground">
-              Didn't receive the code?
-            </p>
-            {canResend ? (
-              <button
-                type="button"
-                onClick={resendOtp}
-                disabled={isLoading}
-                className="text-sm text-primary hover:text-primary/80 font-medium transition underline hover:cursor-pointer disabled:opacity-50"
-              >
-                Resend OTP
-              </button>
-            ) : (
-              <span className="text-sm text-muted-foreground">
-                Resend in {timer}s
-              </span>
-            )}
-          </div>
+          <>
+            <Button
+              onClick={() => handleVerifyOTP(otpValue)}
+              disabled={isLoading || isBlocked || otpValue.length !== 6 || currentAttempts >= OTP_ATTEMPT_LIMIT}
+              className="w-full"
+            >
+              {isLoading ? "Verifying..." : "Verify & Continue"}
+            </Button>
+
+            <div className="space-y-4">
+              {canResend ? (
+                currentAttempts >= OTP_ATTEMPT_LIMIT ? (
+                  <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg text-center">
+                    <MdOutlineDangerous className="size-10 text-orange-500 mx-auto mb-3" />
+                    <p className="text-sm text-orange-600 dark:text-orange-400">
+                      OTP limit reached attempts. Please try later.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-1 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Didn't receive the code?
+                    </p>
+                    <button
+                      type="button"
+                      onClick={resendOtp}
+                      disabled={isLoading}
+                      className="text-sm text-primary hover:text-primary/80 font-medium transition underline hover:cursor-pointer disabled:opacity-50"
+                    >
+                      Resend OTP
+                    </button>
+                  </div>
+                )
+              ) : (
+                <div className="flex items-center justify-center gap-1 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Didn't receive the code?
+                  </p>
+                  <span className="text-sm text-muted-foreground">
+                    Resend in {timer}s
+                  </span>
+                </div>
+              )}
+            </div>
+          </>
         ) : (
           <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-center">
             <MdOutlineDangerous className="size-10 text-red-500 mx-auto mb-3" />
             <p className="text-sm text-red-600 dark:text-red-400">
-              You've exceeded the OTP limit ({OTP_LIMIT} attempts). Please contact support.
+              You've exceeded the OTP limit ({OTP_ATTEMPT_LIMIT} attempts). Please contact support.
             </p>
           </div>
         )}
