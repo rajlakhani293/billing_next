@@ -2,13 +2,12 @@
 
 import React, { forwardRef, useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components"
 
 interface UnifiedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>, 'prefix' | 'onChange' | 'onFocus' | 'onBlur' | 'onKeyDown'> {
   label?: string;
   error?: string;
   helperText?: string;
-  touched?: boolean;
   hideErrorMessage?: boolean;
   mainClassName?: string;
   as?: 'input' | 'textarea';
@@ -39,9 +38,9 @@ interface UnifiedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 
-const UnifiedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, UnifiedInputProps>(
+export const UnifiedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, UnifiedInputProps>(
   ({ 
-    label, error, helperText, touched, hideErrorMessage = false, mainClassName, 
+    label, error, helperText, hideErrorMessage = false, mainClassName, 
     as = 'input', rows, leftIcon, leftText, rightIcon, rightText, prefix, suffix,
     isPhoneNumber = false, countryCode = '+91', maxLength, allowClear = false, onClear,
     isNumber = false, autoSelect = false, resetOnBlur = false, validateKeys = false,
@@ -117,7 +116,7 @@ const UnifiedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, UnifiedI
       "placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed",
       "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
       calculatePadding(),
-      error && touched ? "border-red-500 focus:ring-red-200" : "border-slate-200 focus:border-black focus:ring-4 focus:ring-black/10",
+      error ? "border-red-500 focus:ring-red-200" : "border-slate-200 focus:border-black focus:ring-4 focus:ring-black/10",
       props.className
     );
 
@@ -129,7 +128,10 @@ const UnifiedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, UnifiedI
         value={inputValue}
         onChange={(e) => { setInputValue(e.target.value); onChange?.(e); }}
         onFocus={onFocus as any}
-        onBlur={onBlur as any}
+        onBlur={(e) => {
+          onBlur?.(e);
+          onChange?.(e);
+        }}
         onKeyDown={handleKeyDown}
         {...(props as any)}
       />
@@ -141,7 +143,10 @@ const UnifiedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, UnifiedI
         value={inputValue}
         onChange={isPhoneNumber ? handlePhoneChange : isNumber ? handleNumberChange : (e) => { setInputValue(e.target.value); onChange?.(e); }}
         onFocus={onFocus as any}
-        onBlur={onBlur as any}
+        onBlur={(e) => {
+          onBlur?.(e);
+          onChange?.(e);
+        }}
         onKeyDown={handleKeyDown}
         {...props}
       />
@@ -149,7 +154,7 @@ const UnifiedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, UnifiedI
 
     return (
       <div className={cn("w-full flex flex-col gap-1.5", mainClassName)}>
-        {label && <label className="text-sm font-medium text-slate-700">{label}</label>}
+        {label && <label className="text-sm font-medium text-slate-700">{label}{props.required && <span className="text-red-500 ml-1">*</span>}</label>}
 
         <div className="flex items-stretch">
           <div className="relative flex-grow flex items-center">
@@ -204,8 +209,8 @@ const UnifiedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, UnifiedI
           )}
         </div>
 
-        {/* Messaging */}
-        {error && touched && !hideErrorMessage ? (
+        {/* Error or Helper Text */}
+        {error && !hideErrorMessage ? (
           <p className="text-xs text-red-500">{error}</p>
         ) : helperText ? (
           <p className="text-xs text-slate-500">{helperText}</p>
@@ -216,5 +221,3 @@ const UnifiedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, UnifiedI
 );
 
 UnifiedInput.displayName = 'UnifiedInput';
-
-export default UnifiedInput;

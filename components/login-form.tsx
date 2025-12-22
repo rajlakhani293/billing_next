@@ -11,13 +11,13 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
-import UnifiedInput from "@/components/ui/unified-input"
 import { OTPVerification } from "@/components/otp-verification"
 import {
   Card,
   CardContent,
 } from "@/components/ui/card"
 import { ViewIcon, HideIcon } from "@/components/AppIcon"
+import { UnifiedInput } from "./ui/unified-input"
 
 export function LoginForm({
   className,
@@ -144,17 +144,25 @@ export function LoginForm({
 
         {/* Login Method Toggle */}
         {(loginMethod === "otp" && step === 1 || loginMethod === "email") && (
-          <div className="flex rounded-lg border p-1">
+          <div className="relative flex rounded-lg border p-1 bg-muted/50">
+            <div 
+              className="absolute top-1 bottom-1 bg-primary rounded-md shadow-sm transition-all duration-300 ease-out"
+              style={{
+                left: loginMethod === "otp" ? "4px" : "50%",
+                right: loginMethod === "otp" ? "50%" : "4px",
+                width: "calc(50% - 4px)"
+              }}
+            />
             <button
               type="button"
               onClick={() => {
                 setLoginMethod("otp")
                 setStep(1)
-                setMobileNumber("") // Clear mobile state on tab switch
+                setMobileNumber("")
               }}
               className={cn(
-                "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all",
-                loginMethod === "otp" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                "relative flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all duration-300 ease-out z-10",
+                loginMethod === "otp" ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               )}
               disabled={isLoading}
             >
@@ -167,8 +175,8 @@ export function LoginForm({
                 setStep(1)
               }}
               className={cn(
-                "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all",
-                loginMethod === "email" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                "relative flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all duration-300 ease-out z-10",
+                loginMethod === "email" ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               )}
               disabled={isLoading}
             >
@@ -255,16 +263,15 @@ export function LoginForm({
                     Forgot your password?
                   </a>
                 </div>
-                <div className="relative">
-                  <UnifiedInput 
-                    id="password" 
+                <UnifiedInput
+                id="password" 
                     name="password"
+                    placeholder="******"
                     type={showPassword ? "text" : "password"} 
                     value={password}
                     onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setPassword(e.target.value)}
                     required 
                     disabled={isLoading}
-                    className="pr-12"
                     suffix={
                       <button
                         type="button"
@@ -280,8 +287,7 @@ export function LoginForm({
                         )}
                       </button>
                     }
-                  />
-                </div>
+                />
               </Field>
               <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? "Logging in..." : "Login"}

@@ -10,13 +10,14 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
-import UnifiedInput from "@/components/ui/unified-input"
 import { OTPVerification } from "@/components/otp-verification"
 import {
   Card,
   CardContent,
 } from "@/components/ui/card"
 import { ViewIcon, HideIcon } from "@/components/AppIcon"
+import { UnifiedInput } from "./ui/unified-input"
+import { auth } from "@/lib/api/auth"
 
 const SignupForm = ({ className, ...props }: React.ComponentProps<"div">) => {
   const router = useRouter()
@@ -36,6 +37,10 @@ const SignupForm = ({ className, ...props }: React.ComponentProps<"div">) => {
   const [companyName, setCompanyName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+
+    const [sendOtpApi] = auth.useSendOtpMutation();
+  const [verifyOtpApi] = auth.useVerifyOtpMutation();
+  // const [registerApi] = auth.useRegisterMutation();
 
   // Centralized Send OTP logic
   const sendOTP = useCallback(async (mobile: string, showToast = true): Promise<boolean> => {
@@ -185,7 +190,10 @@ const SignupForm = ({ className, ...props }: React.ComponentProps<"div">) => {
           <OTPVerification
             mobileNumber={mobileNumber}
             onBack={handleBackToMobile}
-            onSuccess={() => setStep(3)}
+            onSuccess={() => {
+              toast.success("OTP Verified! Redirecting to registration...")
+              router.push(`/register?mobile=${mobileNumber}`)
+            }}
             onSendOTP={sendOTP}
             onVerifyOTP={verifyOTP}
             currentAttempts={otpAttempts}
