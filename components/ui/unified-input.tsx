@@ -73,6 +73,10 @@ export const UnifiedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, U
         if (!regex.test(value) && value !== '') return;
         if (allowDots && value.split('.').length > 2) return;
       }
+      // Enforce maxLength for number inputs
+      if (maxLength && value.length > maxLength) {
+        value = value.slice(0, maxLength);
+      }
       setInputValue(value);
       onChange?.(e);
     };
@@ -141,7 +145,17 @@ export const UnifiedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, U
         type={isPhoneNumber ? 'tel' : isNumber ? 'text' : props.type}
         className={sharedClasses}
         value={inputValue}
-        onChange={isPhoneNumber ? handlePhoneChange : isNumber ? handleNumberChange : (e) => { setInputValue(e.target.value); onChange?.(e); }}
+        onChange={isPhoneNumber ? handlePhoneChange : isNumber ? handleNumberChange : (e) => { 
+          let value = e.target.value;
+          // Enforce maxLength for regular inputs
+          if (maxLength && value.length > maxLength) {
+            value = value.slice(0, maxLength);
+          }
+          setInputValue(value); 
+          // Create a new event with the truncated value
+          const truncatedEvent = { ...e, target: { ...e.target, value } };
+          onChange?.(truncatedEvent); 
+        }}
         onFocus={onFocus as any}
         onBlur={(e) => {
           onBlur?.(e);

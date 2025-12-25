@@ -14,22 +14,21 @@ interface SignupResponse {
 }
 
 interface SendOtpRequest {
-  mobile_no: string;
+  phone_number: string;
 }
 
 interface SendOtpResponse {
   code: number;
-  status: string;
+  success: string;
   message: string;
-  data: {
-    message: string;
-    dev_otp: string;
-  };
+  data:{
+    otp_code: string;
+  }
 }
 
 interface VerifyOtpRequest {
-  mobile_no: string;
-  otp: string;
+  phone_number: string;
+  otp_code: string;
 }
 
 interface VerifyOtpResponse {

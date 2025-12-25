@@ -3,6 +3,8 @@
 import React, { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
+import Cookies from "js-cookie"
+import { useDispatch } from "react-redux"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,12 +20,16 @@ import {
 } from "@/components/ui/card"
 import { ViewIcon, HideIcon } from "@/components/AppIcon"
 import { UnifiedInput } from "./ui/unified-input"
+import { auth } from "@/lib/api/auth"
+import { setUnauthorized } from "@/lib/redux/sessionSlice"
+import type { AppDispatch } from "@/lib/redux/store"
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter()
+  const dispatch = useDispatch<AppDispatch>()
   const [loginMethod, setLoginMethod] = useState<"otp" | "email">("otp")
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -32,8 +38,13 @@ export function LoginForm({
   // State for OTP flow
   const [mobileNumber, setMobileNumber] = useState("")
   const [otpAttempts, setOtpAttempts] = useState(0)
+  const [otp, setOtp] = useState("")
   const [isBlocked, setIsBlocked] = useState(false)
+  const [registrationToken, setRegistrationToken] = useState("")
   
+  const [sendLoginOtpApi] = auth.useSendLoginOtpMutation();
+  const [signinApi] = auth.useSigninMutation();
+  const [getSessionData] = auth.useGetSessionDataMutation();
   const canRequestOTP = !isBlocked && otpAttempts < 3
   const incrementAttempts = () => setOtpAttempts(prev => prev + 1)
   
@@ -47,30 +58,33 @@ export function LoginForm({
       if (showToast) toast.error("You have exceeded the OTP limit. Please contact support.")
       return false
     }
-    
+
     if (!mobile || mobile.length !== 10) {
       if (showToast) toast.error("Please enter a valid 10-digit phone number")
       return false
     }
-    
+
     setIsLoading(true)
     let success = false
     try {
-      // **API CALL for SEND OTP**
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setMobileNumber(mobile) // Update mobile number state
-      incrementAttempts() // Increment global attempts
-      
-      if (showToast) toast.success("OTP sent successfully!")
-      success = true
+      const response = await sendLoginOtpApi({ phone_number: `+91${mobile}` }).unwrap()
+
+      if (response.code === 200) {
+        setMobileNumber(mobile) // Update mobile number state
+        incrementAttempts()
+        setOtp(response.data.otp_code)
+        toast.success(response.message)
+        success = true
+      } else {
+        toast.error(response.message || "Failed to send OTP")
+      }
     } catch (error: any) {
-      if (showToast) toast.error("Failed to send OTP. Try again.")
+      if (showToast) toast.error(error.data?.message || "Failed to send OTP. Try again.")
     } finally {
       setIsLoading(false)
     }
     return success
-  }, [canRequestOTP, incrementAttempts])
+  }, [canRequestOTP, incrementAttempts, sendLoginOtpApi])
   
   // Handle form submission for mobile number (Step 1)
   const handleSendOTPForm = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -79,22 +93,70 @@ export function LoginForm({
     
     const success = await sendOTP(mobile, true)
     if (success) {
-      // Only move to step 2 if the API call was successful
       setStep(2)
     }
   }
   
   // Centralized Verify OTP logic
-  const verifyOTP = useCallback(async (otp: string): Promise<boolean> => {
-    // **API CALL for VERIFY OTP**
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // Demo verification logic
-    if (otp === "123456") {
-      return true
+  const verifyOTP = useCallback(async (otp: string): Promise<string | null> => {
+    try {
+      const result = await signinApi({
+        phone_number: `+91${mobileNumber}`,
+        otp_code: otp
+      }).unwrap()
+
+      if (result.code === 200) {
+        const token = result?.data?.access;
+        const refreshToken = result?.data?.refresh;
+        
+        // Set tokens in cookies with proper expiry
+        Cookies.set("token", token, { 
+          expires: 1,
+          path: "/dashboard" 
+        });
+        Cookies.set("refreshToken", refreshToken, { 
+          expires: 30,
+          path: "/dashboard" 
+        });
+        
+        setRegistrationToken(token)
+        
+        // Fetch session data after successful login
+        const userData = {
+          id: result?.data?.user_id,
+          shop_id: result?.data?.shop_id,
+        };
+        
+        if (userData?.id && userData?.shop_id) {
+          try {
+            const sessionData = await getSessionData({
+              user_id: userData.id,
+              shop_id: userData.shop_id,
+            }) as any;
+            
+            if (sessionData?.data?.data) {
+              console.log("Session data fetched:", sessionData.data.data);
+            } else {
+              dispatch(setUnauthorized(true));
+            }
+          } catch (error) {
+            console.error("Error fetching session data:", error);
+            dispatch(setUnauthorized(true));
+          }
+        } else {
+          dispatch(setUnauthorized(true));
+        }
+        
+        return token
+      } else {
+        toast.error(result.message || "OTP verification failed")
+        return null
+      }
+    } catch (error: any) {
+      toast.error(error.data?.message || "OTP verification failed. Try again.")
+      return null
     }
-    return false
-  }, [])
+  }, [mobileNumber, signinApi, getSessionData, dispatch])
 
   // Login with email and password
   const loginWithEmailPassword = async (e: React.FormEvent) => {
@@ -107,17 +169,62 @@ export function LoginForm({
 
     setIsLoading(true)
     try {
-      // **API CALL for EMAIL/PASSWORD Login**
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      if (email === "test@example.com" && password === "password") {
-        toast.success("Login successful!")
-        setTimeout(() => router.push("/dashboard"), 1000)
+      const response = await signinApi({
+        email: email,
+        password: password,
+      }).unwrap()
+
+      console.log("User login successfully:", response)
+      const token = response?.data?.access
+
+      if (token) {
+        toast.success("User Login successfully!")
+        // Store token in cookie like reference implementation
+        Cookies.set("token", token, {
+          expires: 1,
+          path: "/",
+        })
+
+        const refreshToken = response?.data?.refresh
+        if (refreshToken) {
+          Cookies.set("refreshToken", refreshToken, {
+            expires: 30,
+            path: "/",
+          })
+        }
+
+        const userData = response?.data
+
+        if (userData?.user_id && userData?.shop_id) {
+          try {
+            const sessionData = await getSessionData({
+              user_id: userData.user_id,
+              shop_id: userData.shop_id,
+            }) as any;
+            
+            if (sessionData?.data?.data) {
+              console.log("Session data fetched:", sessionData.data.data)
+            } else {
+              dispatch(setUnauthorized(true))
+            }
+          } catch (error) {
+            console.error("Error fetching session data:", error)
+            dispatch(setUnauthorized(true))
+          }
+        } else {
+          dispatch(setUnauthorized(true))
+        }
+        
+        setTimeout(() => {
+          router.push("/dashboard")
+        }, 100)
       } else {
-        throw new Error("Invalid credentials")
+        toast.error("Invalid Credentials")
       }
     } catch (error: any) {
-      toast.error("Invalid email or password")
+      console.error("Error login user:", error)
+      const errorMessage = error?.data?.message || "Something went wrong! Please try again."
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -126,7 +233,6 @@ export function LoginForm({
   // Handle back button from OTP screen
   const handleBackToMobile = () => {
     setStep(1)
-    // IMPORTANT: Reset mobile number if user goes back to enter a new one
     setMobileNumber("")
   }
 
@@ -223,14 +329,19 @@ export function LoginForm({
               <OTPVerification
                 mobileNumber={mobileNumber}
                 onBack={handleBackToMobile}
-                onSuccess={() => {
-                  toast.success("Login successful!")
-                  setTimeout(() => router.push("/dashboard"), 1000)
+                onSuccess={(token) => {
+                  if (token) {
+                    toast.success("Login successful!")
+                    setTimeout(() => router.push("/dashboard"), 1000)
+                  } else {
+                    toast.error("Login token not available")
+                  }
                 }}
                 onSendOTP={sendOTP}
                 onVerifyOTP={verifyOTP}
                 currentAttempts={otpAttempts}
                 isBlocked={isBlocked}
+                demoOtp={otp}
               />
             )}
           </>

@@ -1,5 +1,5 @@
 import { fetchBaseQuery, type BaseQueryFn, type FetchArgs, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
-import { setUnauthorized, setServerError, setPermissionError } from '@/redux/sessionSlice'; 
+import { setUnauthorized, setServerError, setPermissionError } from '../redux/sessionSlice'; 
 import { prepareHeadersWithToken } from './apiUtils';
 
 interface BackendError {
@@ -9,7 +9,7 @@ interface BackendError {
 }
 
 const actualBaseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_API_URL, 
+  baseUrl: process.env.NEXT_API_URL || 'http://127.0.0.1:8000/', 
   prepareHeaders: prepareHeadersWithToken,
 });
 
@@ -17,16 +17,7 @@ export const createBaseQueryWithInterceptor = (
   reducerPath: string
 ): BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> => {
   return async (args: string | FetchArgs, api: any, extraOptions: any) => {
-    
-    let modifiedArgs = args;
-
-    if (typeof args === 'string') {
-      modifiedArgs = `${reducerPath}/${args}`;
-    } else if (args && typeof args === 'object' && 'url' in args) {
-      modifiedArgs = { ...args, url: `${reducerPath}/${args.url}` };
-    }
-
-    const result = await actualBaseQuery(modifiedArgs, api, extraOptions);
+    const result = await actualBaseQuery(args, api, extraOptions);
 
     if (result.error) {
       const data = result.error.data as BackendError;

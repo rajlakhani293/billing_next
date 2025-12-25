@@ -4,20 +4,20 @@ import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import toast from "react-hot-toast"
 import * as yup from "yup"
-import { Button, UnifiedInput } from "@/components"
-import {
-  Card,
-  CardContent,
-} from "@/components"
+import { Button } from "@/components/ui/button"
+import { UnifiedInput } from "@/components/ui/unified-input"
+
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components"
+} from "@/components/ui/select"
 import { ImagePlusIcon } from "./AppIcon"
-import { useScrollToError } from "@/lib/hooks"
+import { useScrollToError } from "@/lib/hooks/index"
+import { auth } from "@/lib/api/auth"
+import { Card, CardContent } from "./ui/card"
 
 interface RegisterForm {
   companyLogo: File | null
@@ -25,12 +25,12 @@ interface RegisterForm {
   legalName: string
   phone: string
   email: string
-  country_id: string
+  country: number
   gstnumber: string
   business_type: string
   pincode: string
-  state: string
-  city: string
+  state: number
+  city: number
   address: string
   website_url: string
   pan_no: string
@@ -46,7 +46,7 @@ const validationSchema = yup.object().shape({
   legalName: yup.string(),
   phone: yup.string().required('Phone number is required'),
   email: yup.string().email('Invalid email format'),
-  country_id: yup.string().required('Country is required'),
+  country: yup.number().required('Country is required'),
   gstnumber: yup.string().test(
     'gst-format',
     'Invalid GSTIN format',
@@ -64,8 +64,8 @@ const validationSchema = yup.object().shape({
       return /^[0-9]{6}$/.test(value);
     }
   ),
-  state: yup.string().required('State is required'),
-  city: yup.string().required('City is required'),
+  state: yup.number().required('State is required'),
+  city: yup.number().required('City is required'),
   address: yup.string(),
   website_url: yup.string().url('Invalid website URL'),
   pan_no: yup.string().test(
@@ -83,22 +83,23 @@ const Register = () => {
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [logoFile, setLogoFile] = useState<File | null>(null)
-
-  // Get mobile number from URL params
-  const mobile_no = searchParams.get('mobile') || ""
+  const [registerApi] = auth.useSignupMutation()
+  
+  const phone_number = searchParams.get('mobile') || ""
+  const registration_token = searchParams.get('token') || ""
 
   const initialValues: RegisterForm = {
     companyLogo: null,
     companyName: "",
     legalName: "",
-    phone: mobile_no,
+    phone: phone_number,
     email: "",
-    country_id: "101",
+    country: 101,
     gstnumber: "",
     business_type: "",
     pincode: "",
-    city: "",
-    state: "",
+    city: 0,
+    state: 0,
     address: "",
     website_url: "",
     pan_no: "",
@@ -111,10 +112,11 @@ const Register = () => {
   // Use the scroll to error hook - moved after state declarations
   const { formRef, scrollToFirstError: scrollToErrorHook } = useScrollToError(errors, isLoading, touched)
 
-  const handleInputChange = async (field: keyof RegisterForm, value: string) => {
+  const handleInputChange = async (field: keyof RegisterForm, value: string | number) => {
+    const finalValue = typeof value === 'string' && ['country', 'state', 'city'].includes(field) ? parseInt(value) || 0 : value
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: finalValue
     }))
     
     // Mark field as touched
@@ -152,6 +154,13 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Check if registration token is available
+    if (!registration_token) {
+      toast.error("Registration token missing. Please start the registration process again.")
+      router.push("/signup")
+      return
+    }
+    
     // Mark all fields as touched
     const allTouched: { [key: string]: boolean } = {}
     Object.keys(formData).forEach(key => {
@@ -166,15 +175,49 @@ const Register = () => {
       
       setIsLoading(true)
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Prepare API payload
+      const apiPayload = {
+        registration_token: registration_token,
+        shop_name: formData.companyName,
+        legal_name: formData.legalName || "",
+        user_name: formData.companyName,
+        email: formData.email,
+        phone_number: `+91${formData.phone}`,
+        country: formData.country,
+        state: formData.state,
+        city: formData.city,
+        pincode: formData.pincode,
+        address: formData.address,
+        tax_no: formData.gstnumber,
+        pan_no: formData.pan_no,
+        business_type_id: parseInt(formData.business_type) || undefined,
+        website_url: formData.website_url,
+        logo_image: logoFile || undefined,
+      }
       
-      // Store in localStorage for demo purposes
-      localStorage.setItem('registrationData', JSON.stringify(formData))
+      // Create FormData if file is present
+      let payload: any = apiPayload
+      if (logoFile) {
+        const formData = new FormData()
+        Object.entries(apiPayload).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            formData.append(key, value.toString())
+          }
+        })
+        if (logoFile) {
+          formData.append('logo_image', logoFile)
+        }
+        payload = formData
+      }
       
-      toast.success("Registration successful!")
+      const result = await registerApi(payload as any).unwrap()
       
-      router.push("/dashboard")
+      if (result.code === 200) {
+        toast.success("Registration successful!")
+        router.push("/login")
+      } else {
+        toast.error(result.message || "Registration failed. Please try again.")
+      }
       
     } catch (err) {
       if (err instanceof yup.ValidationError) {
@@ -192,7 +235,7 @@ const Register = () => {
           scrollToErrorHook()
         }, 100)
       } else {
-        toast.error("Registration failed. Please try again.")
+        toast.error((err as any)?.data?.message || "Registration failed. Please try again.")
       }
     } finally {
       setIsLoading(false)
@@ -469,13 +512,13 @@ const Register = () => {
                 <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Address Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-10">
                   {/* Country */}
-                  <div data-field="country_id">
+                  <div data-field="country">
                     <label className="block text-[15px] font-semibold text-gray-700 mb-1">
                       Country <span className="text-red-500">*</span>
                     </label>
                     <Select
-                      value={formData.country_id}
-                      onValueChange={(value) => handleInputChange("country_id", value)}
+                      value={formData.country ? formData.country.toString() : ""}
+                      onValueChange={(value) => handleInputChange("country", value)}
                       required
                     >
                       <SelectTrigger className="w-full" size="lg">
@@ -489,8 +532,8 @@ const Register = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.country_id && touched.country_id && (
-                      <p className="text-xs text-red-500 mt-1">{errors.country_id}</p>
+                    {errors.country && touched.country && (
+                      <p className="text-xs text-red-500 mt-1">{errors.country}</p>
                     )}
                   </div>
 
@@ -500,7 +543,7 @@ const Register = () => {
                       State <span className="text-red-500">*</span>
                     </label>
                     <Select
-                      value={formData.state}
+                      value={formData.state ? formData.state.toString() : ""}
                       onValueChange={(value) => handleInputChange("state", value)}
                       required
                     >
@@ -526,7 +569,7 @@ const Register = () => {
                       City <span className="text-red-500">*</span>
                     </label>
                     <Select
-                      value={formData.city}
+                      value={formData.city ? formData.city.toString() : ""}
                       onValueChange={(value) => handleInputChange("city", value)}
                       required
                     >

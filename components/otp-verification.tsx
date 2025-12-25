@@ -17,12 +17,13 @@ const OTP_TIMER_SECONDS = NEXT_OTP_TIMER_SECONDS;
 interface OTPVerificationProps {
   mobileNumber: string
   onBack: () => void
-  onSuccess: () => void
   className?: string
   onSendOTP: (mobile: string, showToast?: boolean) => Promise<boolean>
-  onVerifyOTP: (otp: string) => Promise<boolean>
+  onSuccess: (token: string) => void
+  onVerifyOTP: (otp: string) => Promise<string | null>
   currentAttempts: number
   isBlocked: boolean
+  demoOtp?: string
 }
 
 export function OTPVerification({
@@ -33,7 +34,8 @@ export function OTPVerification({
   onSendOTP,
   onVerifyOTP,
   currentAttempts,
-  isBlocked
+  isBlocked,
+  demoOtp
 }: OTPVerificationProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [otpError, setOtpError] = useState(false)
@@ -41,7 +43,13 @@ export function OTPVerification({
   const [timer, setTimer] = useState(0)
   const [canResend, setCanResend] = useState(true)
   const [otpValue, setOtpValue] = useState("")
-  const [devOtp, setDevOtp] = useState("123456")
+  const [devOtp, setDevOtp] = useState(demoOtp || "123456")
+
+  useEffect(() => {
+    if (demoOtp) {
+      setDevOtp(demoOtp)
+    }
+  }, [demoOtp])
 
   useEffect(() => {
     if (timer <= 0) {
@@ -85,30 +93,23 @@ export function OTPVerification({
   }
 
 
-  // Verify OTP function (calls the parent's logic)
   const handleVerifyOTP = async (otp: string) => {
-    if (otp.length !== 6) {
-      toast.error(`Please enter all 6 digits (current: ${otp.length})`)
-      return
-    }
+    if (otp.length !== 6) return
 
     setIsLoading(true)
     setOtpError(false)
-    setIsSuccess(false)
 
-    const isSuccess = await onVerifyOTP(otp)
+    const token = await onVerifyOTP(otp)
 
-    if (isSuccess) {
+    if (token) {
       setIsSuccess(true)
       toast.success("OTP Verified Successfully!")
       setTimeout(() => {
-        onSuccess()
+        onSuccess(token)
       }, 500)
     } else {
       setOtpError(true)
-      toast.error("Invalid or expired OTP")
     }
-
     setIsLoading(false)
   }
 
@@ -137,7 +138,7 @@ export function OTPVerification({
             type="button"
             onClick={onBack}
             disabled={isBlocked || isLoading}
-            className="text-black hover:text-black/80 transition disabled:opacity-50 dark:text-white dark:hover:text-gray-300"
+            className="text-black hover:text-black/80 hover:cursor-pointer transition disabled:opacity-50 dark:text-white dark:hover:text-gray-300"
             aria-label="Edit Mobile Number"
           >
             <MdEdit className="size-4" />
