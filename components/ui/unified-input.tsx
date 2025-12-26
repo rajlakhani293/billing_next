@@ -2,7 +2,7 @@
 
 import React, { forwardRef, useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components"
+import { Button } from "@/components/ui/button"
 
 interface UnifiedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>, 'prefix' | 'onChange' | 'onFocus' | 'onBlur' | 'onKeyDown'> {
   label?: string;

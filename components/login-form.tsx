@@ -18,7 +18,7 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card"
-import { ViewIcon, HideIcon } from "@/components/AppIcon"
+import { ViewIcon, HideIcon, CheckCircleIcon, CancelIcon, RegCircleIcon } from "@/components/AppIcon"
 import { UnifiedInput } from "./ui/unified-input"
 import { auth } from "@/lib/api/auth"
 import { setUnauthorized } from "@/lib/redux/sessionSlice"
@@ -51,6 +51,43 @@ export function LoginForm({
   // State for Email/Password flow
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [passwordAttempted, setPasswordAttempted] = useState(false)
+  const [passwordStrength, setPasswordStrength] = useState({
+    minLength: false,
+    hasUpperCase: false,
+    hasNumber: false,
+    hasSpecialChar: false
+  })
+
+  const passwordRequirements = {
+    minLength: {
+      test: (password: string) => password.length >= 8,
+      label: 'Must be at least 8 characters'
+    },
+    hasUpperCase: {
+      test: (password: string) => /[A-Z]/.test(password),
+      label: 'Must contain one uppercase letter'
+    },
+    hasNumber: {
+      test: (password: string) => /[0-9]/.test(password),
+      label: 'Must contain one number'
+    },
+    hasSpecialChar: {
+      test: (password: string) => /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      label: 'Must contain one special character'
+    }
+  };
+
+  // Check password strength whenever password changes
+  React.useEffect(() => {
+    const strength = {
+      minLength: passwordRequirements.minLength.test(password),
+      hasUpperCase: passwordRequirements.hasUpperCase.test(password),
+      hasNumber: passwordRequirements.hasNumber.test(password),
+      hasSpecialChar: passwordRequirements.hasSpecialChar.test(password)
+    };
+    setPasswordStrength(strength);
+  }, [password])
 
   // Centralized Send OTP logic
   const sendOTP = useCallback(async (mobile: string, showToast = true): Promise<boolean> => {
@@ -162,8 +199,20 @@ export function LoginForm({
   const loginWithEmailPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    setPasswordAttempted(true)
+    
     if (!email || !password) {
       toast.error("Please enter both email and password")
+      return
+    }
+
+    // Check if password meets all requirements
+    const allRequirementsMet = Object.keys(passwordRequirements).every(
+      key => passwordRequirements[key as keyof typeof passwordRequirements].test(password)
+    );
+    
+    if (!allRequirementsMet) {
+      toast.error("Please ensure your password meets all requirements")
       return
     }
 
@@ -222,7 +271,6 @@ export function LoginForm({
         toast.error("Invalid Credentials")
       }
     } catch (error: any) {
-      console.error("Error login user:", error)
       const errorMessage = error?.data?.message || "Something went wrong! Please try again."
       toast.error(errorMessage)
     } finally {
@@ -399,6 +447,33 @@ export function LoginForm({
                       </button>
                     }
                 />
+                <div className="space-y-1.5 p-2">
+                  {Object.keys(passwordRequirements).map((key) => {
+                    const requirement = passwordRequirements[key as keyof typeof passwordRequirements];
+                    const isFulfilled = passwordStrength?.[key as keyof typeof passwordStrength];
+                    const showAsError = passwordAttempted && !isFulfilled;
+
+                    return (
+                      <div key={key} className="flex items-center gap-2 text-xs">
+                        <span className={`flex items-center gap-1.5 ${isFulfilled
+                            ? 'text-green-600 dark:text-green-500'
+                            : showAsError
+                              ? 'text-red-500 dark:text-red-400'
+                              : 'text-slate-500 dark:text-slate-400'
+                            }`}>
+                          {isFulfilled ? (
+                            <CheckCircleIcon className="size-4" />
+                          ) : showAsError ? (
+                            <CancelIcon className="size-4" />
+                          ) : (
+                            <RegCircleIcon className="size-4" />
+                          )}
+                          {requirement.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </Field>
               <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? "Logging in..." : "Login"}

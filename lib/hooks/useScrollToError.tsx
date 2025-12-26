@@ -63,8 +63,6 @@ export const useScrollToError = (
           }
         }, 300); 
       }
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
