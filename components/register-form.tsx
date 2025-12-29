@@ -155,7 +155,7 @@ const Register = () => {
 
   useEffect(() => {
     loadCountries();
-    loadStates("274");
+    loadStates("1");
   }, []);
 
 
