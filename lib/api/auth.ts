@@ -62,14 +62,10 @@ interface RegisterRequest {
 }
 
 interface RegisterResponse {
+  success: boolean;
   code: number;
-  status: string;
   message: string;
-  data: {
-    user_id: number;
-    shop_id: number;
-    email: string;
-  };
+  data: any;
 }
 
 export const auth = createApi({

@@ -92,7 +92,7 @@ const Register = () => {
     legalName: "",
     phone: phone_number,
     email: "",
-    country: "274",
+    country: "1",
     gstnumber: "",
     business_type: "",
     pincode: "",
@@ -281,7 +281,7 @@ const Register = () => {
       const result = await registerApi(payload as any).unwrap()
 
       if (result.code === 200) {
-        toast.success("Registration successful!")
+        toast.success(result.message ||"Registration successful!")
         router.push("/login")
       } else {
         toast.error(result.message || "Registration failed. Please try again.")
@@ -457,7 +457,7 @@ const Register = () => {
                           value={formData.business_type}
                           onValueChange={(value) => handleInputChange("business_type", value)}
                         >
-                          <SelectTrigger className="w-full" size="lg">
+                          <SelectTrigger className="w-full" size="lg" suppressHydrationWarning>
                             <SelectValue placeholder="Select Business Type" />
                           </SelectTrigger>
                           <SelectContent>
@@ -513,7 +513,7 @@ const Register = () => {
                           onValueChange={(value) => handleInputChange("country", value)}
                           required
                         >
-                          <SelectTrigger className="w-full" size="lg">
+                          <SelectTrigger className="w-full" size="lg" suppressHydrationWarning>
                             <SelectValue placeholder="Select Country" />
                           </SelectTrigger>
                           <SelectContent>
@@ -539,7 +539,7 @@ const Register = () => {
                           onValueChange={(value) => handleInputChange("state", value)}
                           required
                         >
-                          <SelectTrigger className="w-full" size="lg">
+                          <SelectTrigger className="w-full" size="lg" suppressHydrationWarning>
                             <SelectValue placeholder="Select State" />
                           </SelectTrigger>
                           <SelectContent>
@@ -565,7 +565,7 @@ const Register = () => {
                           onValueChange={(value) => handleInputChange("city", value)}
                           required
                         >
-                          <SelectTrigger className="w-full" size="lg">
+                          <SelectTrigger className="w-full" size="lg" suppressHydrationWarning>
                             <SelectValue placeholder="Select City" />
                           </SelectTrigger>
                           <SelectContent>
