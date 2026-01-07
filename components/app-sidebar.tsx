@@ -81,7 +81,7 @@ function SidebarHeaderContent() {
         onClick={toggleSidebar}
         className="text-sidebar-foreground border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md p-1 transition-colors cursor-pointer"
       >
-        <PanelLeftIcon className="size-6" />
+        <PanelLeftIcon className="size-5" />
       </button>
     </div>
   )

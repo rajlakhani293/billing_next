@@ -11,6 +11,11 @@ export function useShop() {
   return useSelector((state: RootState) => state.session.shop)
 }
 
+// Hook to get shop list data
+export function useShopList() {
+  return useSelector((state: RootState) => state.session.shopList)
+}
+
 // Hook to get menus data
 export function useMenus() {
   return useSelector((state: RootState) => state.session.menus)

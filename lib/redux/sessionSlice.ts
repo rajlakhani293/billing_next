@@ -66,6 +66,7 @@ interface SessionState {
   } | null;
   user: User | null;
   shop: Shop | null;
+  shopList: any[];
   menus: Menu[];
   modules: Module[];
   permissions: Permission[];
@@ -79,6 +80,7 @@ const initialState: SessionState = {
   serverError: null,
   user: null,
   shop: null,
+  shopList: [],
   menus: [],
   modules: [],
   permissions: [],
@@ -101,23 +103,24 @@ const sessionSlice = createSlice({
     setServerError: (state, action: PayloadAction<{ isError: boolean; message: string; code?: number } | null>) => {
       state.serverError = action.payload;
     },
-    setSessionData: (state, action: PayloadAction<{
-      user?: User;
-      shop?: Shop;
-      menus?: Menu[];
-      modules?: Module[];
-      permissions?: Permission[];
-    }>) => {
-      if (action.payload.user) state.user = action.payload.user;
-      if (action.payload.shop) state.shop = action.payload.shop;
-      if (action.payload.menus) state.menus = action.payload.menus;
-      if (action.payload.modules) state.modules = action.payload.modules;
-      if (action.payload.permissions) state.permissions = action.payload.permissions;
+    setSessionData: (state, action: PayloadAction<any>) => {
+      const data = action.payload;
+      // Handle raw API response structure
+      if (data.user) state.user = data.user;
+      if (data.shop) state.shop = data.shop;
+      if (data.shop_list) state.shopList = data.shop_list;
+      if (data.sidebarMenu) {
+        state.menus = data.sidebarMenu;
+        // Extract modules from sidebarMenu
+        state.modules = data.sidebarMenu.flatMap((menu: any) => menu.modules || []);
+      }
+      if (data.user?.permissions) state.permissions = data.user.permissions;
       state.isSessionLoaded = true;
     },
     clearSessionData: (state) => {
       state.user = null;
       state.shop = null;
+      state.shopList = [];
       state.menus = [];
       state.modules = [];
       state.permissions = [];

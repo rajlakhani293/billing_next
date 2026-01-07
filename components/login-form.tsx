@@ -139,13 +139,12 @@ export function LoginForm({
       const result = await signinApi({
         phone_number: `+91${mobileNumber}`,
         otp_code: otp,
-        shop_id: 1, // Add shop_id - you can make this dynamic later
+        shop_id: 1,
       }).unwrap()
 
       if (result.code === 200) {
         const token = result?.data?.token;
         
-        // Set tokens in cookies with proper expiry
         if (token) {
           Cookies.set("token", token, { 
             expires: 1,
@@ -158,7 +157,6 @@ export function LoginForm({
           shop_id: result?.data?.user?.shop_id,
         };
         
-        // Set cookies if we have any valid data
         if (userData?.id) {
           Cookies.set("user_id", userData.id.toString(), { path: "/" });
         }
@@ -208,7 +206,7 @@ export function LoginForm({
       const response = await signinApi({
         email: email,
         password: password,
-        shop_id: 1, // Add shop_id to email/password login too
+        shop_id: 1,
       }).unwrap()
 
       console.log("User login successfully:", response)
@@ -216,7 +214,6 @@ export function LoginForm({
 
       if (token) {
         toast.success("User Login successfully!")
-        // Store token in cookie like reference implementation
         Cookies.set("token", token, {
           expires: 1,
           path: "/",
@@ -224,7 +221,6 @@ export function LoginForm({
 
         const userData = response?.data?.user
 
-        // Set cookies if we have any valid data, with fallbacks
         if (userData?.id) {
           Cookies.set("user_id", userData.id.toString(), { path: "/" });
         } 
