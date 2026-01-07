@@ -1,11 +1,6 @@
 import { createApi, type EndpointBuilder } from "@reduxjs/toolkit/query/react";
 import { createBaseQueryWithInterceptor } from "./base";
-import { postMutation } from "./apiUtils";
-
-interface SignupCredentials {
-  accountNumber: string;
-  password: string;
-}
+import { getMutation, postMutation } from "./apiUtils";
 
 interface SignupResponse {
   success: boolean;
@@ -129,9 +124,9 @@ export const auth = createApi({
     
     // Get Session Data Api
     getSessionData: builder.mutation({
-      query: postMutation("auth/session_data"),
+      query: postMutation("auth/session-data"),
     }),
-    
+
   }),
 });
 

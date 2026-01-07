@@ -18,11 +18,11 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card"
-import { ViewIcon, HideIcon, CheckCircleIcon, CancelIcon, RegCircleIcon } from "@/components/AppIcon"
 import { UnifiedInput } from "./ui/unified-input"
 import { auth } from "@/lib/api/auth"
 import { setUnauthorized } from "@/lib/redux/sessionSlice"
 import type { AppDispatch } from "@/lib/redux/store"
+import { ViewIcon, HideIcon, CheckCircleIcon, CancelIcon, RegCircleIcon } from "./AppIcon"
 
 export function LoginForm({
   className,
@@ -44,7 +44,6 @@ export function LoginForm({
   
   const [sendLoginOtpApi] = auth.useSendLoginOtpMutation();
   const [signinApi] = auth.useSigninMutation();
-  const [getSessionData] = auth.useGetSessionDataMutation();
   const canRequestOTP = !isBlocked && otpAttempts < 3
   const incrementAttempts = () => setOtpAttempts(prev => prev + 1)
   
@@ -139,49 +138,37 @@ export function LoginForm({
     try {
       const result = await signinApi({
         phone_number: `+91${mobileNumber}`,
-        otp_code: otp
+        otp_code: otp,
+        shop_id: 1, // Add shop_id - you can make this dynamic later
       }).unwrap()
 
       if (result.code === 200) {
-        const token = result?.data?.access;
-        const refreshToken = result?.data?.refresh;
+        const token = result?.data?.token;
         
         // Set tokens in cookies with proper expiry
-        Cookies.set("token", token, { 
-          expires: 1,
-          path: "/dashboard" 
-        });
-        Cookies.set("refreshToken", refreshToken, { 
-          expires: 30,
-          path: "/dashboard" 
-        });
-        
-        setRegistrationToken(token)
-        
-        // Fetch session data after successful login
+        if (token) {
+          Cookies.set("token", token, { 
+            expires: 1,
+            path: "/" 
+          });
+        }
+                
         const userData = {
-          id: result?.data?.user_id,
-          shop_id: result?.data?.shop_id,
+          id: result?.data?.user?.id,
+          shop_id: result?.data?.user?.shop_id,
         };
         
-        if (userData?.id && userData?.shop_id) {
-          try {
-            const sessionData = await getSessionData({
-              user_id: userData.id,
-              shop_id: userData.shop_id,
-            }) as any;
-            
-            if (sessionData?.data?.data) {
-              console.log("Session data fetched:", sessionData.data.data);
-            } else {
-              dispatch(setUnauthorized(true));
-            }
-          } catch (error) {
-            console.error("Error fetching session data:", error);
-            dispatch(setUnauthorized(true));
-          }
-        } else {
-          dispatch(setUnauthorized(true));
+        // Set cookies if we have any valid data
+        if (userData?.id) {
+          Cookies.set("user_id", userData.id.toString(), { path: "/" });
+        }
+        
+        if (userData?.shop_id) {
+          Cookies.set("shop_id", userData.shop_id.toString(), { path: "/" });
+        }
+        
+        if (!userData?.id || !userData?.shop_id) {
+          console.log("⚠️ Some OTP user data missing, but continuing anyway")
         }
         
         return token
@@ -193,7 +180,7 @@ export function LoginForm({
       toast.error(error.data?.message || "OTP verification failed. Try again.")
       return null
     }
-  }, [mobileNumber, signinApi, getSessionData, dispatch])
+  }, [mobileNumber, signinApi, dispatch])
 
   // Login with email and password
   const loginWithEmailPassword = async (e: React.FormEvent) => {
@@ -221,10 +208,11 @@ export function LoginForm({
       const response = await signinApi({
         email: email,
         password: password,
+        shop_id: 1, // Add shop_id to email/password login too
       }).unwrap()
 
       console.log("User login successfully:", response)
-      const token = response?.data?.access
+      const token = response?.data?.token
 
       if (token) {
         toast.success("User Login successfully!")
@@ -234,34 +222,19 @@ export function LoginForm({
           path: "/",
         })
 
-        const refreshToken = response?.data?.refresh
-        if (refreshToken) {
-          Cookies.set("refreshToken", refreshToken, {
-            expires: 30,
-            path: "/",
-          })
+        const userData = response?.data?.user
+
+        // Set cookies if we have any valid data, with fallbacks
+        if (userData?.id) {
+          Cookies.set("user_id", userData.id.toString(), { path: "/" });
+        } 
+        
+        if (userData?.shop_id) {
+          Cookies.set("shop_id", userData.shop_id, { path: "/" });
         }
-
-        const userData = response?.data
-
-        if (userData?.user_id && userData?.shop_id) {
-          try {
-            const sessionData = await getSessionData({
-              user_id: userData.user_id,
-              shop_id: userData.shop_id,
-            }) as any;
-            
-            if (sessionData?.data?.data) {
-              console.log("Session data fetched:", sessionData.data.data)
-            } else {
-              dispatch(setUnauthorized(true))
-            }
-          } catch (error) {
-            console.error("Error fetching session data:", error)
-            dispatch(setUnauthorized(true))
-          }
-        } else {
-          dispatch(setUnauthorized(true))
+        
+        if (!userData?.id || !userData?.shop_id) {
+          console.log("⚠️ Some user data missing, but continuing anyway")
         }
         
         setTimeout(() => {

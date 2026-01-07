@@ -2,24 +2,15 @@
 
 import * as React from "react"
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
+  FiAlignJustify,
+} from "react-icons/fi"
+import {
   PanelLeftIcon,
   PanelRightIcon,
-  PieChart,
-  Settings2,
-  SquareTerminal,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -29,135 +20,31 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { NextJsIcon } from "./AppIcon"
+import { useMenus } from "@/hooks/useSession"
 
-// This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
+// Icon mapping function
+const getIconComponent = (iconName: string) => {
+  switch (iconName) {
+    case "FiAlignJustify":
+      return FiAlignJustify;
+    default:
+      return FiAlignJustify;
+  }
+}
+
+// Transform API data to nav-main format
+const transformMenuData = (menus: any[]) => {
+  return menus.map(menu => ({
+    title: menu.name || menu.menu_name,
+    url: menu.url || menu.menu_url,
+    icon: getIconComponent(menu.icon_name || menu.menu_icon_name),
+    isActive: false,
+    items: menu.modules?.map((module: any) => ({
+      title: module.name || module.module_name,
+      url: module.url || module.module_url,
+    })) || []
+  }));
 }
 
 // Custom header component for sidebar
@@ -173,12 +60,12 @@ function SidebarHeaderContent() {
         onMouseLeave={() => setShowExpandButton(false)}
       >
         <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-          <GalleryVerticalEnd className="size-4" />
+          <NextJsIcon className="size-4" />
         </div>
         {showExpandButton && (
           <button
             onClick={toggleSidebar}
-            className="absolute bg-sidebar-accent text-sidebar-accent-foreground rounded-lg flex aspect-square size-8 items-center justify-center hover:bg-sidebar-accent/80 transition-all duration-200 ease-in-out opacity-100"
+            className="bg-white absolute border-gray-200 flex border rounded-lg size-8 items-center justify-center transition-all duration-200 ease-in-out cursor-pointer"
           >
             <PanelRightIcon className="size-4" />
           </button>
@@ -189,32 +76,34 @@ function SidebarHeaderContent() {
 
   return (
     <div className="flex items-center justify-between w-full">
-      <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-        <GalleryVerticalEnd className="size-4" />
-      </div>
+      <img src="next.svg" alt="Next" className="h-6 w-auto" />
       <button
         onClick={toggleSidebar}
-        className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md p-1 transition-colors"
+        className="text-sidebar-foreground border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md p-1 transition-colors cursor-pointer"
       >
-        <PanelLeftIcon className="size-4" />
+        <PanelLeftIcon className="size-6" />
       </button>
     </div>
   )
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const menus = useMenus();
+  const navItems = React.useMemo(() => {
+    if (menus && menus.length > 0) {
+      return transformMenuData(menus);
+    }
+    return [];
+  }, [menus]);
+
   return (
     <Sidebar collapsible="icon" className="transition-all duration-300 ease-in-out" {...props}>
       <SidebarHeader>
         <SidebarHeaderContent />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain items={navItems} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )
