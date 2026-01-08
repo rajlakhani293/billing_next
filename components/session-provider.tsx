@@ -35,8 +35,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const userId = Cookies.get("user_id")
     const shopId = Cookies.get("shop_id")
         
-    if (!token) {
-      console.log("❌ No token found, returning early")
+    if (!token || !userId || !shopId) {
+      console.log("❌ Missing authentication data:", { token: !!token, userId: !!userId, shopId: !!shopId })
+      dispatch(clearSessionData())
       return
     }
     setIsLoading(true)
@@ -58,11 +59,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           dispatch(setSessionData(data))
         } else {
           console.log("❌ Invalid session data:", sessionResponse)
+          dispatch(clearSessionData())
         }
       } else {
         console.log("❌ Invalid user data:", userData)
+        dispatch(clearSessionData())
       }
     } catch (error) {
+      console.log("❌ Error loading session data:", error)
       dispatch(clearSessionData())
     } finally {
       setIsLoading(false)
@@ -76,7 +80,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const clearSession = () => {
     dispatch(clearSessionData())
     Cookies.remove("token")
-    Cookies.remove("refreshToken")
     Cookies.remove("user_id")
     Cookies.remove("shop_id")
   }

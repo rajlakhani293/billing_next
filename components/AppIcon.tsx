@@ -1,13 +1,13 @@
 import {
   FaSpinner,
   FaCheckCircle,
-  FaRegCircle,
+  FaRegCircle
 } from 'react-icons/fa';
 import {  MdCancel} from 'react-icons/md';
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { IoMdClose } from "react-icons/io";
 import { SiNextdotjs } from "react-icons/si";
-import { AudioWaveform, BadgeCheck, Bell, BookOpen, Bot, CheckIcon, ChevronDownIcon, ChevronRight, ChevronsUpDown, ChevronUpIcon, CircleIcon, Command, CreditCard, Folder, Forward, Frame, GalleryVerticalEnd, LogOut, MinusIcon, MoreHorizontal, PanelLeftIcon, PanelRightIcon, PieChart, Plus, Settings2, Sparkles, SquareTerminal, Trash2, XIcon } from 'lucide-react';
+import { AudioWaveform, BadgeCheck, Bell, BookOpen, Bot, CheckIcon, ChevronDownIcon, ChevronRight, ChevronsUpDown, ChevronUpIcon, CircleIcon, Command, CreditCard, Folder, Forward, Frame, GalleryVerticalEnd, LogOut, MinusIcon, MoreHorizontal, PanelLeftIcon, PanelRightIcon, PieChart, Plus, Settings2, Sparkles, SquareTerminal, Trash2 } from 'lucide-react';
 
 export const CheckCircleIcon = FaCheckCircle;
 export const ViewIcon = AiOutlineEye;

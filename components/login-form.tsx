@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/card"
 import { UnifiedInput } from "./ui/unified-input"
 import { auth } from "@/lib/api/auth"
-import { setUnauthorized } from "@/lib/redux/sessionSlice"
 import type { AppDispatch } from "@/lib/redux/store"
+import { useSession } from "@/components/session-provider"
 import { ViewIcon, HideIcon, CheckCircleIcon, CancelIcon, RegCircleIcon } from "./AppIcon"
 
 export function LoginForm({
@@ -30,6 +30,7 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const router = useRouter()
   const dispatch = useDispatch<AppDispatch>()
+  const { refreshSession } = useSession()
   const [loginMethod, setLoginMethod] = useState<"otp" | "email">("otp")
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -40,7 +41,6 @@ export function LoginForm({
   const [otpAttempts, setOtpAttempts] = useState(0)
   const [otp, setOtp] = useState("")
   const [isBlocked, setIsBlocked] = useState(false)
-  const [registrationToken, setRegistrationToken] = useState("")
   
   const [sendLoginOtpApi] = auth.useSendLoginOtpMutation();
   const [signinApi] = auth.useSigninMutation();
@@ -139,7 +139,6 @@ export function LoginForm({
       const result = await signinApi({
         phone_number: `+91${mobileNumber}`,
         otp_code: otp,
-        shop_id: 1,
       }).unwrap()
 
       if (result.code === 200) {
@@ -158,16 +157,19 @@ export function LoginForm({
         };
         
         if (userData?.id) {
-          Cookies.set("user_id", userData.id.toString(), { path: "/" });
+          Cookies.set("user_id", userData.id.toString(), { expires: 1, path: "/" });
         }
         
         if (userData?.shop_id) {
-          Cookies.set("shop_id", userData.shop_id.toString(), { path: "/" });
+          Cookies.set("shop_id", userData.shop_id.toString(), { expires: 1, path: "/" });
         }
         
         if (!userData?.id || !userData?.shop_id) {
           console.log("⚠️ Some OTP user data missing, but continuing anyway")
         }
+        
+        // Refresh session data after successful login
+        await refreshSession()
         
         return token
       } else {
@@ -178,7 +180,7 @@ export function LoginForm({
       toast.error(error.data?.message || "OTP verification failed. Try again.")
       return null
     }
-  }, [mobileNumber, signinApi, dispatch])
+  }, [mobileNumber, signinApi, dispatch, refreshSession])
 
   // Login with email and password
   const loginWithEmailPassword = async (e: React.FormEvent) => {
@@ -206,7 +208,6 @@ export function LoginForm({
       const response = await signinApi({
         email: email,
         password: password,
-        shop_id: 1,
       }).unwrap()
 
       console.log("User login successfully:", response)
@@ -222,16 +223,19 @@ export function LoginForm({
         const userData = response?.data?.user
 
         if (userData?.id) {
-          Cookies.set("user_id", userData.id.toString(), { path: "/" });
+          Cookies.set("user_id", userData.id.toString(), { expires: 1, path: "/" });
         } 
         
         if (userData?.shop_id) {
-          Cookies.set("shop_id", userData.shop_id, { path: "/" });
+          Cookies.set("shop_id", userData.shop_id.toString(), { expires: 1, path: "/" });
         }
         
         if (!userData?.id || !userData?.shop_id) {
           console.log("⚠️ Some user data missing, but continuing anyway")
         }
+        
+        // Refresh session data after successful login
+        await refreshSession()
         
         setTimeout(() => {
           router.push("/dashboard")

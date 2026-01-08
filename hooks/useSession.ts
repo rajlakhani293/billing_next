@@ -1,59 +1,102 @@
 import { useSelector } from 'react-redux'
 import type { RootState } from '@/lib/redux/store'
+import { useMemo } from 'react'
 
-// Hook to get current user data
+// Main hook that provides all session data
+export function useSession() {
+  const sessionData = useSelector((state: RootState) => state.session)
+  
+  return useMemo(() => {
+    const {
+      user,
+      shop,
+      shopList,
+      menus,
+      modules,
+      permissions,
+      isSessionLoaded,
+      isUnauthorized,
+      permissionError,
+      sessionUpdateMessage,
+      serverError
+    } = sessionData
+
+    // Helper functions
+    const hasPermission = (permissionCode: string) => 
+      permissions.some(permission => permission.code === permissionCode)
+    
+    const hasModule = (moduleCode: string) => 
+      modules.some(module => module.code === moduleCode)
+    
+    const isAuthenticated = isSessionLoaded && !!user
+
+    return {
+      // Raw data
+      user,
+      shop,
+      shopList,
+      menus,
+      modules,
+      permissions,
+      isSessionLoaded,
+      isUnauthorized,
+      permissionError,
+      sessionUpdateMessage,
+      serverError,
+      
+      // Computed values
+      isAuthenticated,
+      
+      // Helper functions
+      hasPermission,
+      hasModule,
+    }
+  }, [sessionData])
+}
+
+// Legacy hooks for backward compatibility - can be removed gradually
 export function useUser() {
   return useSelector((state: RootState) => state.session.user)
 }
 
-// Hook to get current shop data
 export function useShop() {
   return useSelector((state: RootState) => state.session.shop)
 }
 
-// Hook to get shop list data
 export function useShopList() {
   return useSelector((state: RootState) => state.session.shopList)
 }
 
-// Hook to get menus data
 export function useMenus() {
   return useSelector((state: RootState) => state.session.menus)
 }
 
-// Hook to get modules data
 export function useModules() {
   return useSelector((state: RootState) => state.session.modules)
 }
 
-// Hook to get permissions data
 export function usePermissions() {
   return useSelector((state: RootState) => state.session.permissions)
 }
 
-// Hook to check if user has specific permission
 export function useHasPermission(permissionCode: string) {
   const permissions = useSelector((state: RootState) => state.session.permissions)
   return permissions.some(permission => permission.code === permissionCode)
 }
 
-// Hook to check if user has access to specific module
 export function useHasModule(moduleCode: string) {
   const modules = useSelector((state: RootState) => state.session.modules)
   return modules.some(module => module.code === moduleCode)
 }
 
-// Hook to get session loading state
 export function useSessionLoading() {
   return useSelector((state: RootState) => state.session.isSessionLoaded)
 }
 
-// Hook to get all session data at once
 export function useSessionData() {
   return useSelector((state: RootState) => state.session)
 }
 
-// Hook to check if user is authenticated
 export function useIsAuthenticated() {
   const user = useSelector((state: RootState) => state.session.user)
   const isSessionLoaded = useSelector((state: RootState) => state.session.isSessionLoaded)
