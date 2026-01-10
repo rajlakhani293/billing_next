@@ -72,7 +72,7 @@ export const SidebarContainer: React.FC<SidebarContainerProps> = ({
         <aside
             ref={sidebarRef}
             className={twMerge(
-                `fixed inset-y-0 left-0 z-[999] flex flex-col border-r border-gray-200 bg-white transition-all duration-300 ease-in-out h-[100vh] `,
+                `flex flex-col border-r border-gray-200 bg-white transition-all duration-300 ease-in-out `,
                 isCollapsed ? "w-[68px]" : "w-[264px]"
             )}
         >
@@ -225,76 +225,46 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
     const [renderExpanded, setRenderExpanded] = useState<boolean>(showExpanded && isOpen);
     const [shouldAnimateOpen, setShouldAnimateOpen] = useState(false);
 
-    // 1. Ref for the list item to measure position
     const liRef = useRef<HTMLLIElement>(null);
     const popupRef = useRef<HTMLUListElement>(null);
-    // 2. State to determine vertical alignment ('top' or 'bottom')
     const [popupPlacement, setPopupPlacement] = useState<'top' | 'bottom'>('top');
 
     // 3. Smart Positioning Logic
     useEffect(() => {
-        // Only run this calculation when the tooltip is active and elements exist
         if (isActiveTooltip && liRef.current && popupRef.current) {
             
-            // Get dimensions
             const triggerRect = liRef.current.getBoundingClientRect();
-            const popupHeight = popupRef.current.offsetHeight; // Actual height of the dropdown
+            const popupHeight = popupRef.current.offsetHeight;
             const viewportHeight = window.innerHeight;
-
-            // Calculate available space below the trigger's top edge
-            // (We use top edge because 'top-0' aligns with the top of the trigger)
             const spaceBelow = viewportHeight - triggerRect.top;
-            
-            // Logic: If the popup is taller than the space available below, flip it to the bottom.
-            // We add a small buffer (e.g., 20px) to prevent it from touching the screen edge.
             if (spaceBelow < (popupHeight + 20)) {
                 setPopupPlacement('bottom');
             } else {
                 setPopupPlacement('top');
             }
         }
-    }, [isActiveTooltip]); // Re-run whenever it opens
+    }, [isActiveTooltip]); 
 
     const handleToggle = (e: React.MouseEvent) => {
         if (isCollapsed) {
-            // Check if this specific dropdown is currently open (via hover or click)
             if (activeTooltip === label) {
-                // SCENARIO: The popup is OPEN
                 
                 if (!hasClicked) {
-                    // Case 1: Opened via Hover, this is the FIRST click.
-                    // Action: Don't close. Just mark it as clicked.
                     e.preventDefault();
                     setHasClicked(true);
                 } else {
-                    // Case 2: Opened via Hover and already clicked ONCE.
-                    // Action: This is the second click, so Close it.
                     setActiveTooltip(null);
                     setHasClicked(false);
                 }
             } else {
-                // SCENARIO: The popup is CLOSED (e.g., clicked without hovering first)
                 e.preventDefault();
                 setActiveTooltip(label);
-                setHasClicked(true); // Mark as clicked immediately
+                setHasClicked(true);
             }
         } else {
             onToggle();
         }
     };
-
-    // const handleToggle = (e: React.MouseEvent) => {
-    //     if (isCollapsed && !isMobileOpen) {
-    //         if (activeTooltip !== label) {
-    //             e.preventDefault();
-    //             setActiveTooltip(label);
-    //         } else {
-    //             setActiveTooltip(null);
-    //         }
-    //     } else {
-    //         onToggle();
-    //     }
-    // };
 
     useEffect(() => {
         const update = () => {
@@ -343,7 +313,6 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
         
             ref={liRef}
             className="relative group sidebar-interactive"
-            // 1. OPEN on Hover (JS only)
             onMouseEnter={() => { 
                 if (isCollapsed) {
                     setActiveTooltip(label); 
@@ -351,10 +320,6 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
                 } 
             }}
 
-            // onMouseEnter={() => { 
-            //     if (isCollapsed && !isMobileOpen) setActiveTooltip(label); 
-            // }}
-            // 2. CLOSE on Leave (JS only)
             onMouseLeave={() => { 
                 if (isCollapsed) setActiveTooltip(null); 
             }}

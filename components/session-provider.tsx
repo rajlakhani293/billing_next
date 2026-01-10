@@ -37,7 +37,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const shopId = Cookies.get("shop_id")
         
     if (!token || !userId || !shopId) {
-      toast.error("Missing authentication data")
       dispatch(clearSessionData())
       return
     }
