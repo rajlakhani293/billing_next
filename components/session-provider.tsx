@@ -6,6 +6,7 @@ import Cookies from 'js-cookie'
 import { auth } from '@/lib/api/auth'
 import { setSessionData, clearSessionData } from '@/lib/redux/sessionSlice'
 import type { AppDispatch, RootState } from '@/lib/redux/store'
+import toast from 'react-hot-toast'
 
 interface SessionContextType {
   isLoading: boolean;
@@ -36,7 +37,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const shopId = Cookies.get("shop_id")
         
     if (!token || !userId || !shopId) {
-      console.log("❌ Missing authentication data:", { token: !!token, userId: !!userId, shopId: !!shopId })
+      toast.error("Missing authentication data")
       dispatch(clearSessionData())
       return
     }
@@ -55,18 +56,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
         if (sessionResponse?.data?.data) {
           const data = sessionResponse.data.data
-          console.log("✅ Session data received:", data)
           dispatch(setSessionData(data))
-        } else {
-          console.log("❌ Invalid session data:", sessionResponse)
-          dispatch(clearSessionData())
         }
       } else {
-        console.log("❌ Invalid user data:", userData)
+        toast.error("Something went wrong")
         dispatch(clearSessionData())
       }
     } catch (error) {
-      console.log("❌ Error loading session data:", error)
+      toast.error(error)
       dispatch(clearSessionData())
     } finally {
       setIsLoading(false)

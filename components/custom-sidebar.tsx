@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation";
 import DynamicIcon from "./DynamicIcon"
 import { useSession } from "@/hooks/useSession"
 import { 
@@ -15,12 +16,12 @@ import {
 const transformMenuData = (menus: any[]): SidebarItemData[] => {
   return menus.map(menu => ({
     label: menu.name || menu.menu_name,
-    href: menu.url || menu.menu_url,
+    href: menu.url || menu.menu_url ? `/${menu.url || menu.menu_url}` : undefined,
     icon: <DynamicIcon name={menu.icon_name || menu.menu_icon_name} size={20} />,
     children: menu.modules?.map((module: any) => ({
       label: module.name || module.module_name,
       href: module.url || module.module_url,
-      icon: module.icon_name ? <DynamicIcon name={module.icon_name} size={16} /> : undefined,
+      icon: <DynamicIcon name={module.icon_name || module.module_icon_name} size={16} />,
     })) || []
   }));
 }
@@ -31,6 +32,12 @@ export function CustomSidebar({ onToggle }: { onToggle?: (isCollapsed: boolean) 
   const [openDropdowns, setOpenDropdowns] = React.useState<Set<string>>(new Set());
   const [activeTooltip, setActiveTooltip] = React.useState<string | null>(null);
   const sidebarRef = React.useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+
+  const isPathActive = (targetHref: string, currentPath: string) => {
+    if (targetHref === "/") return currentPath === "/";
+    return currentPath.startsWith(targetHref);
+  };
   
   const navItems = React.useMemo(() => {
     if (menus && menus.length > 0) {
@@ -70,7 +77,6 @@ export function CustomSidebar({ onToggle }: { onToggle?: (isCollapsed: boolean) 
           icon={item.icon}
           label={item.label}
           isCollapsed={isCollapsed}
-          isMobileOpen={false}
           activeTooltip={activeTooltip}
           setActiveTooltip={setActiveTooltip}
           isOpen={isOpen}
@@ -97,11 +103,16 @@ export function CustomSidebar({ onToggle }: { onToggle?: (isCollapsed: boolean) 
         isCollapsed={isCollapsed}
         activeTooltip={activeTooltip}
         setActiveTooltip={setActiveTooltip}
+        isActive={(() => {
+          const active = item.href ? isPathActive(item.href, pathname) : false;
+          return active;
+        })()}
       />
     );
   };
 
   return (
+   <div className="relative flex h-screen">
     <SidebarContainer
       isCollapsed={isCollapsed}
       sidebarRef={sidebarRef}
@@ -110,5 +121,6 @@ export function CustomSidebar({ onToggle }: { onToggle?: (isCollapsed: boolean) 
     >
       {navItems.map(renderNavItem)}
     </SidebarContainer>
+    </div>
   )
 }

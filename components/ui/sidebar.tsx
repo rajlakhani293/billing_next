@@ -1,5 +1,5 @@
 import { twMerge } from "tailwind-merge";
-import { CloseIcon, DownIcon, NextJsIcon, PanelLeft, PanelRight } from "../AppIcon";
+import { DownIcon, NextJsIcon, PanelLeft, PanelRight } from "../AppIcon";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -26,7 +26,6 @@ type SidebarDropdownProps = {
     label: string;
     children?: React.ReactNode;
     isCollapsed: boolean;
-    isMobileOpen: boolean;
     activeTooltip: string | null;
     setActiveTooltip: (v: string | null) => void;
     isOpen: boolean;
@@ -108,12 +107,12 @@ export const SidebarContainer: React.FC<SidebarContainerProps> = ({
                         onClick={toggleSidebar}
                         onMouseEnter={() => setIsHovering(true)}
                         onMouseLeave={() => setIsHovering(false)}
-                        className={`btn btn-circle btn-ghost items-center justify-center p-1.5 rounded-lg border hover:bg-gray-100 transition-colors ${isCollapsed ? "cursor-e-resize" : "cursor-w-resize"}`}
+                        className={`btn btn-circle btn-ghost items-center justify-center p-1.5 rounded-lg border transition-colors ${isCollapsed ? "cursor-e-resize" : "cursor-w-resize"}`}
                     >
                         {isCollapsed ? (
-                            isHovering ? <PanelRight className="size-5 cursor-e-resize" /> : <NextJsIcon className="size-6 cursor-e-resize" />
+                            isHovering ? <PanelRight className="size-6 cursor-e-resize" /> : <NextJsIcon className="size-6 cursor-e-resize" />
                         ) : (
-                            <PanelLeft className="size-5 cursor-w-resize" />
+                            <PanelLeft className="size-6 cursor-w-resize" />
                         )}
                     </button>
                 </div>
@@ -182,7 +181,6 @@ export const NavItem: React.FC<NavItemProps> = ({
                 <Link
                     href={href}
                     onClick={handleClick}
-                    className="absolute inset-0"
                     aria-hidden="true"
                 />
             )}
@@ -200,10 +198,10 @@ export const NavItem: React.FC<NavItemProps> = ({
                     )}
                 >
                     <p className={twMerge(
-                        "px-3 py-2 text-xs font-semibold uppercase tracking-wider",
+                        "p-2 flex items-center gap-x-2 text-xs font-semibold uppercase tracking-wider",
                         isActive ? "text-blue-900" : "text-gray-600"
                     )}>
-                        {label}
+                       {icon} {label}
                     </p>
                 </Link>
             )}
@@ -213,14 +211,14 @@ export const NavItem: React.FC<NavItemProps> = ({
 
 export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
     icon, label, children,
-    isCollapsed, isMobileOpen,
+    isCollapsed,
     activeTooltip, setActiveTooltip, isOpen, onToggle,
     isActive = false
 }) => {
 
     const [hasClicked, setHasClicked] = useState(false);
     const isActiveTooltip = activeTooltip === label;
-    const showExpanded = !isCollapsed || isMobileOpen;
+    const showExpanded = !isCollapsed;
 
     const contentRef = useRef<HTMLDivElement | null>(null);
     const [contentHeight, setContentHeight] = useState<number>(0);
@@ -258,7 +256,7 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
     }, [isActiveTooltip]); // Re-run whenever it opens
 
     const handleToggle = (e: React.MouseEvent) => {
-        if (isCollapsed && !isMobileOpen) {
+        if (isCollapsed) {
             // Check if this specific dropdown is currently open (via hover or click)
             if (activeTooltip === label) {
                 // SCENARIO: The popup is OPEN
@@ -347,7 +345,7 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
             className="relative group sidebar-interactive"
             // 1. OPEN on Hover (JS only)
             onMouseEnter={() => { 
-                if (isCollapsed && !isMobileOpen) {
+                if (isCollapsed) {
                     setActiveTooltip(label); 
                     setHasClicked(false); 
                 } 
@@ -358,23 +356,20 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
             // }}
             // 2. CLOSE on Leave (JS only)
             onMouseLeave={() => { 
-                if (isCollapsed && !isMobileOpen) setActiveTooltip(null); 
+                if (isCollapsed) setActiveTooltip(null); 
             }}
         >
             <button
                 onClick={handleToggle}
                 className={twMerge(
-                    `flex w-full items-center rounded-lg px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200`,
-                    // Mobile: Always spread apart
-                    "justify-between gap-3",
-                    // isCollapsed && !isResizing ? "lg:justify-center" : "",
+                    `flex w-full items-center cursor-pointer rounded-lg px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200 justify-between gap-3`,
                     isActiveTooltip ? "bg-gray-100 text-gray-900" : "",
                     isActive ? "bg-blue-50 text-blue-900 font-medium" : ""
                 )}
             >
                 <div className="flex items-center gap-3">
                     <span className="shrink-0">{icon}</span>
-                    {(!isCollapsed || isMobileOpen) && (
+                    {!isCollapsed && (
                     <span className={twMerge(
                         "text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300",
                         "w-auto opacity-100",
@@ -411,18 +406,16 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
                 </div>
             )}
 
-            {isCollapsed && !isMobileOpen && (
+            {isCollapsed && (
                 <ul
                     ref={popupRef}
                     className={twMerge(
                         `hidden lg:block absolute left-full ml-5 w-48 rounded-md border border-gray-200 bg-white p-2 shadow-lg z-50
                         before:absolute before:-left-5 before:top-0 before:h-full before:w-5 before:content-['']
                         transition-all duration-200 ease-in-out origin-left`,
-                        // 4. Dynamic Positioning Logic
                         popupPlacement === 'top' 
                             ? "top-0" 
                             : "bottom-0",
-                        // 3. REMOVED 'group-hover' classes here. Relies ONLY on activeTooltip now.
                         isActiveTooltip
                             ? "visible opacity-100 translate-x-0 scale-100"
                             : "invisible opacity-0 -translate-x-2 scale-95" 
@@ -436,7 +429,7 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
                     {children}
                     {popupPlacement === 'bottom' && (
                         <li className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider border-t border-gray-100 mt-1 whitespace-nowrap">
-                        {label}
+                       {label}
                     </li>
                     )}
                 </ul>
@@ -464,7 +457,7 @@ export const SidebarDropdownItem: React.FC<SidebarDropdownItemProps> = ({
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 )}
             >
-                {icon && <span className="shrink-0">{icon}</span>}
+                <span className="shrink-0">{icon}</span>
                 <span className="overflow-hidden whitespace-nowrap transition-all duration-300">
                     {label}
                 </span>

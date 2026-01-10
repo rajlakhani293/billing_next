@@ -106,7 +106,7 @@ export function LoginForm({
       const response = await sendLoginOtpApi({ phone_number: `+91${mobile}` }).unwrap()
 
       if (response.code === 200) {
-        setMobileNumber(mobile) // Update mobile number state
+        setMobileNumber(mobile)
         incrementAttempts()
         setOtp(response.data.otp_code)
         toast.success(response.message)
@@ -133,6 +133,41 @@ export function LoginForm({
     }
   }
   
+  // Reusable function to handle post-authentication tasks
+  const handlePostAuth = useCallback(async (userData: any, token: string, redirectUrl?: string) => {
+    // Set cookies
+    if (token) {
+      Cookies.set("token", token, {
+        expires: 1,
+        path: "/",
+      })
+    }
+
+    if (userData?.id) {
+      Cookies.set("user_id", userData.id.toString(), { expires: 1, path: "/" });
+    }
+    
+    if (userData?.shop_id) {
+      Cookies.set("shop_id", userData.shop_id.toString(), { expires: 1, path: "/" });
+    }
+    
+    if (!userData?.id || !userData?.shop_id) {
+      toast.error("⚠️ Some user data missing")
+    }
+    
+    // Refresh session data after successful login
+    await refreshSession()
+    
+    // Handle redirect
+    if (redirectUrl) {
+      setTimeout(() => {
+        router.push(redirectUrl)
+      }, 100)
+    }
+    
+    return token
+  }, [refreshSession, router])
+
   // Centralized Verify OTP logic
   const verifyOTP = useCallback(async (otp: string): Promise<string | null> => {
     try {
@@ -145,33 +180,17 @@ export function LoginForm({
         const token = result?.data?.token;
         
         if (token) {
-          Cookies.set("token", token, { 
-            expires: 1,
-            path: "/" 
-          });
+          const userData = {
+            id: result?.data?.user?.id,
+            shop_id: result?.data?.user?.shop_id,
+          };
+          
+          await handlePostAuth(userData, token)
+          return token
+        } else {
+          toast.error(result.message || "OTP verification failed")
+          return null
         }
-                
-        const userData = {
-          id: result?.data?.user?.id,
-          shop_id: result?.data?.user?.shop_id,
-        };
-        
-        if (userData?.id) {
-          Cookies.set("user_id", userData.id.toString(), { expires: 1, path: "/" });
-        }
-        
-        if (userData?.shop_id) {
-          Cookies.set("shop_id", userData.shop_id.toString(), { expires: 1, path: "/" });
-        }
-        
-        if (!userData?.id || !userData?.shop_id) {
-          console.log("⚠️ Some OTP user data missing, but continuing anyway")
-        }
-        
-        // Refresh session data after successful login
-        await refreshSession()
-        
-        return token
       } else {
         toast.error(result.message || "OTP verification failed")
         return null
@@ -180,7 +199,7 @@ export function LoginForm({
       toast.error(error.data?.message || "OTP verification failed. Try again.")
       return null
     }
-  }, [mobileNumber, signinApi, dispatch, refreshSession])
+  }, [mobileNumber, signinApi, handlePostAuth])
 
   // Login with email and password
   const loginWithEmailPassword = async (e: React.FormEvent) => {
@@ -210,36 +229,12 @@ export function LoginForm({
         password: password,
       }).unwrap()
 
-      console.log("User login successfully:", response)
       const token = response?.data?.token
+      const userData = response?.data?.user
 
-      if (token) {
+      if (token && userData) {
         toast.success("User Login successfully!")
-        Cookies.set("token", token, {
-          expires: 1,
-          path: "/",
-        })
-
-        const userData = response?.data?.user
-
-        if (userData?.id) {
-          Cookies.set("user_id", userData.id.toString(), { expires: 1, path: "/" });
-        } 
-        
-        if (userData?.shop_id) {
-          Cookies.set("shop_id", userData.shop_id.toString(), { expires: 1, path: "/" });
-        }
-        
-        if (!userData?.id || !userData?.shop_id) {
-          console.log("⚠️ Some user data missing, but continuing anyway")
-        }
-        
-        // Refresh session data after successful login
-        await refreshSession()
-        
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 100)
+        await handlePostAuth(userData, token, "/dashboard")
       } else {
         toast.error("Invalid Credentials")
       }
