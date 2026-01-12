@@ -144,11 +144,11 @@ export function LoginForm({
     }
 
     if (userData?.id) {
-      Cookies.set("user_id", userData.id.toString(), { expires: 1, path: "/" });
+      Cookies.set("user_id", userData.id, { expires: 1, path: "/" });
     }
     
     if (userData?.shop_id) {
-      Cookies.set("shop_id", userData.shop_id.toString(), { expires: 1, path: "/" });
+      Cookies.set("shop_id", userData.shop_id, { expires: 1, path: "/" });
     }
     
     if (!userData?.id || !userData?.shop_id) {

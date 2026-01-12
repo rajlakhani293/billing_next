@@ -35,8 +35,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const token = Cookies.get("token")
     const userId = Cookies.get("user_id")
     const shopId = Cookies.get("shop_id")
+    
+    console.log("🍪 Cookies check:", { token: !!token, userId: !!userId, shopId: !!shopId });
+    console.log("🍪 Cookies values:", { token, userId, shopId });
         
     if (!token || !userId || !shopId) {
+      console.log("❌ Missing cookies, clearing session and returning");
+      toast.error("❌ Missing cookies, clearing session and returning")
       dispatch(clearSessionData())
       return
     }
@@ -75,9 +80,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const clearSession = () => {
     dispatch(clearSessionData())
-    Cookies.remove("token")
-    Cookies.remove("user_id")
-    Cookies.remove("shop_id")
+    Cookies.remove("token", { path: "/" })
+    Cookies.remove("user_id", { path: "/" })
+    Cookies.remove("shop_id", { path: "/" })
   }
 
   useEffect(() => {

@@ -68,6 +68,13 @@ export const SidebarContainer: React.FC<SidebarContainerProps> = ({
 }) => {
     const [isHovering, setIsHovering] = useState(false);
 
+    // Reset hover state when sidebar collapses
+    useEffect(() => {
+        if (isCollapsed) {
+            setIsHovering(false);
+        }
+    }, [isCollapsed]);
+
     return (
         <aside
             ref={sidebarRef}
@@ -190,7 +197,7 @@ export const NavItem: React.FC<NavItemProps> = ({
                     href={href}
                     onClick={handleClick}
                     className={twMerge(
-                        `hidden lg:block absolute left-full top-0 ml-5 whitespace-nowrap rounded-md border px-2 py-0.5 shadow-lg z-50
+                        `absolute left-full top-0 ml-5 whitespace-nowrap rounded-md border px-2 py-0.5 shadow-lg z-50
              before:absolute before:-left-5 before:top-0 before:h-full before:w-5 before:content-[''] before:bg-transparent
              transition-all duration-200 ease-in-out origin-left
              invisible opacity-0 -translate-x-2 scale-95 group-hover:visible group-hover:opacity-100 group-hover:translate-x-0 group-hover:scale-100 cursor-pointer`,
@@ -375,7 +382,7 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
                 <ul
                     ref={popupRef}
                     className={twMerge(
-                        `hidden lg:block absolute left-full ml-5 w-48 rounded-md border border-gray-200 bg-white p-2 shadow-lg z-50
+                        `absolute left-full ml-5 w-48 rounded-md border border-gray-200 bg-white p-2 shadow-lg z-50
                         before:absolute before:-left-5 before:top-0 before:h-full before:w-5 before:content-['']
                         transition-all duration-200 ease-in-out origin-left`,
                         popupPlacement === 'top' 
