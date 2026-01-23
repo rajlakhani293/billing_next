@@ -4,8 +4,8 @@ import { getMutation } from "./apiUtils";
 
 const endpointsConfig = {
     getCountries: { query: () => getMutation(`countries`) },
-    getStates: { query: ({ id }: { id: string }) => getMutation(`countries/${id}/regions`) },
-    getCities: { query: ({ id }: { id: string }) => getMutation(`regions/${id}/cities`) },
+    getStates: { query: ({ id }: { id: string }) => getMutation(`countries/${id}/states`) },
+    getCities: { query: ({ id }: { id: string }) => getMutation(`states/${id}/cities`) },
 }
 
 export const locations = createApi({

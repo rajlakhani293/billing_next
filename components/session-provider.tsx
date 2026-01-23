@@ -41,7 +41,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         
     if (!token || !userId || !shopId) {
       console.log("❌ Missing cookies, clearing session and returning");
-      toast.error("❌ Missing cookies, clearing session and returning")
       dispatch(clearSessionData())
       return
     }
