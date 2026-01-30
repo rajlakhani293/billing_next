@@ -3,7 +3,7 @@
 import { Provider } from "react-redux";
 import { store } from "@/lib/redux/store";
 import { Toaster } from "react-hot-toast";
-import { SessionProvider } from "@/components/session-provider";
+import { SessionProvider } from "@/lib/redux/session-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

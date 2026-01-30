@@ -9,7 +9,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp"
 import { MdEdit, MdOutlineDangerous } from "react-icons/md"
-import { NEXT_OTP_ATTEMPT_LIMIT, NEXT_OTP_TIMER_SECONDS } from "./constants"
+import { NEXT_OTP_ATTEMPT_LIMIT, NEXT_OTP_TIMER_SECONDS } from "../lib/utils/constants"
 
 const OTP_ATTEMPT_LIMIT = NEXT_OTP_ATTEMPT_LIMIT;
 const OTP_TIMER_SECONDS = NEXT_OTP_TIMER_SECONDS;

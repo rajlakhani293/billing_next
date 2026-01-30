@@ -88,7 +88,16 @@ const DynamicIcon = ({
   const prefix = name.slice(0, 2);
   const library = iconLibraries[prefix];
 
-  const Icon = library ? library[name] : null;
+  let Icon = library ? library[name] : null;
+
+  // Handle overlapping libraries (Io vs Io5, Hi vs Hi2)
+  if (!Icon) {
+    if (prefix === "Io") {
+      Icon = Io5Icons[name as keyof typeof Io5Icons];
+    } else if (prefix === "Hi") {
+      Icon = Hi2Icons[name as keyof typeof Hi2Icons];
+    }
+  }
 
   const RenderIcon = Icon || DefaultIcon;
 

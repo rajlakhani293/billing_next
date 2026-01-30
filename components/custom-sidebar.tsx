@@ -116,7 +116,7 @@ export function CustomSidebar({ onToggle }: { onToggle?: (isCollapsed: boolean) 
     <SidebarContainer
       isCollapsed={isCollapsed}
       sidebarRef={sidebarRef}
-      logo={<img src="next.svg" alt="Next" className="w-30" />}
+      logo={<img src="/next.svg" alt="Next" className="w-30" />}
       toggleSidebar={toggleSidebar}
     >
       {navItems.map(renderNavItem)}

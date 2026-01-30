@@ -21,7 +21,7 @@ import {
 import { UnifiedInput } from "./ui/unified-input"
 import { auth } from "@/lib/api/auth"
 import type { AppDispatch } from "@/lib/redux/store"
-import { useSession } from "@/components/session-provider"
+import { useSession } from "@/lib/redux/session-provider"
 import { ViewIcon, HideIcon, CheckCircleIcon, CancelIcon, RegCircleIcon } from "./AppIcon"
 
 export function LoginForm({
