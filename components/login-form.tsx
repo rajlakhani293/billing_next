@@ -142,18 +142,6 @@ export function LoginForm({
         path: "/",
       })
     }
-
-    if (userData?.id) {
-      Cookies.set("user_id", userData.id, { expires: 1, path: "/" });
-    }
-    
-    if (userData?.shop_id) {
-      Cookies.set("shop_id", userData.shop_id, { expires: 1, path: "/" });
-    }
-    
-    if (!userData?.id || !userData?.shop_id) {
-      toast.error("⚠️ Some user data missing")
-    }
     
     // Refresh session data after successful login
     await refreshSession()

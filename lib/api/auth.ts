@@ -123,8 +123,8 @@ export const auth = createApi({
     }),
     
     // Get Session Data Api
-    getSessionData: builder.mutation({
-      query: postMutation("auth/session-data"),
+    getSessionData: builder.query({
+      query: () => getMutation("auth/session-data"),
     }),
 
   }),
@@ -138,5 +138,5 @@ export const {
   useSigninMutation,
   useSignupMutation,
   useLogoutMutation,
-  useGetSessionDataMutation,
+  useLazyGetSessionDataQuery,
 } = auth;

@@ -29,17 +29,6 @@ export default function SettingsLayout({
               <Settings className="h-4 w-4" />
               General Settings
             </Link>
-            
-            <Link
-              href="/settings/items"
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-              )}
-            >
-              <Package className="h-4 w-4" />
-              Items
-            </Link>
           </div>
         </nav>
       </aside>

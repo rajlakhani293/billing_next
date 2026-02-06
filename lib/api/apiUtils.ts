@@ -11,27 +11,7 @@ export const prepareHeadersWithToken = (headers: Headers) => {
 };
 
 const getMutationBody = (body: any) => {
-  const storedData = getLocalStorageItem("sessionData", true) as any;
-
-  const getValid = (value: any, fallback: any) =>
-    value !== undefined && value !== null && value !== 0 ? value : fallback;
-
-  const requestBody: any = {
-    ...body,
-    shop_id: getValid(body?.shop_id, storedData?.shop?.id),
-    user_id: getValid(body?.user_id, storedData?.user?.id),
-  };
-
-  if (body instanceof FormData) {
-    Object.entries(requestBody).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        body.append(key, String(value));
-      }
-    });
-    return body;
-  }
-
-  return requestBody;
+  return body;
 };
 
 export const postMutation = (url: string) => (body: any) => {
