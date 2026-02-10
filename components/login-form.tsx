@@ -4,23 +4,19 @@ import React, { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import Cookies from "js-cookie"
-import { useDispatch } from "react-redux"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
-  Field,
   FieldDescription,
   FieldGroup,
-  FieldLabel,
 } from "@/components/ui/field"
 import { OTPVerification } from "@/components/otp-verification"
 import {
   Card,
   CardContent,
 } from "@/components/ui/card"
-import { UnifiedInput } from "./ui/unified-input"
+import { UniFieldInput } from "@/components/ui/unifield-input"
 import { auth } from "@/lib/api/auth"
-import type { AppDispatch } from "@/lib/redux/store"
 import { useSession } from "@/lib/redux/session-provider"
 import { ViewIcon, HideIcon, CheckCircleIcon, CancelIcon, RegCircleIcon } from "./AppIcon"
 
@@ -29,7 +25,6 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter()
-  const dispatch = useDispatch<AppDispatch>()
   const { refreshSession } = useSession()
   const [loginMethod, setLoginMethod] = useState<"otp" | "email">("otp")
   const [step, setStep] = useState(1)
@@ -40,7 +35,7 @@ export function LoginForm({
   const [mobileNumber, setMobileNumber] = useState("")
   const [otpAttempts, setOtpAttempts] = useState(0)
   const [otp, setOtp] = useState("")
-  const [isBlocked, setIsBlocked] = useState(false)
+  const [isBlocked] = useState(false)
   
   const [sendLoginOtpApi] = auth.useSendLoginOtpMutation();
   const [signinApi] = auth.useSigninMutation();
@@ -190,9 +185,7 @@ export function LoginForm({
   }, [mobileNumber, signinApi, handlePostAuth])
 
   // Login with email and password
-  const loginWithEmailPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+  const loginWithEmailPassword = async () => {
     setPasswordAttempted(true)
     
     if (!email || !password) {
@@ -302,25 +295,23 @@ export function LoginForm({
             {step === 1 && (
               <form className="space-y-6" onSubmit={handleSendOTPForm}>
                 <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor="mobile">Mobile Number</FieldLabel>
-                    <UnifiedInput 
-                      id="mobile" 
-                      name="mobile"
-                      type="tel" 
-                      prefix="+91"
-                      placeholder="Enter 10-digit mobile number" 
-                      maxLength={10}
-                      pattern="[6-9][0-9]{9}"
-                      required 
-                      disabled={isLoading}
-                      value={mobileNumber}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setMobileNumber(e.target.value)}
-                    />
-                    <FieldDescription>
-                      We'll send a verification code to this number
-                    </FieldDescription>
-                  </Field>
+                  <UniFieldInput
+                  id="mobile" 
+                  name="mobile"
+                  type="tel" 
+                  label="Mobile Number"
+                  placeholder="Enter 10-digit mobile number" 
+                  maxLength={10}
+                  pattern="[6-9][0-9]{9}"
+                  required 
+                  disabled={isLoading}
+                  value={mobileNumber}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMobileNumber(e.target.value)}
+                  prefix="+91"
+                />
+                <FieldDescription>
+                  We'll send a verification code to this number
+                </FieldDescription>
                   <Button type="submit" disabled={isLoading || mobileNumber.length !== 10 || !canRequestOTP} className="w-full">
                     {isLoading ? "Sending OTP..." : isBlocked ? "OTP Limit Reached" : "Send Verification Code"}
                   </Button>
@@ -353,24 +344,22 @@ export function LoginForm({
 
         {/* Email/Password Login Method */}
         {loginMethod === "email" && (
-          <form onSubmit={loginWithEmailPassword} className="space-y-6">
+          <form method="post" onSubmit={loginWithEmailPassword} className="space-y-6">
             <FieldGroup>
-              <Field>
-                <UnifiedInput 
+              <UniFieldInput
+                id="email" 
+                name="email"
+                type="email" 
                 label="Email"
-                  id="email" 
-                  name="email"
-                  type="email" 
-                  placeholder="m@example.com" 
-                  value={email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setEmail(e.target.value)}
-                  required 
-                  disabled={isLoading}
-                />
-              </Field>
-              <Field>
-                <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                placeholder="m@example.com" 
+                value={email}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                required 
+                disabled={isLoading}
+              />
+              <div>
+                <div className="flex items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700">Password</span>
                   <a
                     href="#"
                     className="ml-auto text-sm underline-offset-4 hover:underline text-primary"
@@ -378,30 +367,36 @@ export function LoginForm({
                     Forgot your password?
                   </a>
                 </div>
-                <UnifiedInput
-                id="password" 
-                    name="password"
-                    placeholder="******"
-                    type={showPassword ? "text" : "password"} 
-                    value={password}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setPassword(e.target.value)}
-                    required 
-                    disabled={isLoading}
-                    suffix={
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="p-1 text-muted-foreground hover:text-foreground"
-                        tabIndex={-1}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? (
-                          <HideIcon className="size-5" />
-                        ) : (
-                          <ViewIcon className="size-5" />
-                        )}
-                      </button>
+                <UniFieldInput
+                  id="password" 
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="******"
+                  value={password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      loginWithEmailPassword()
                     }
+                  }}
+                  required 
+                  disabled={isLoading}
+                  suffix={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-muted-foreground hover:text-foreground"
+                      tabIndex={-1}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <HideIcon className="size-5" />
+                      ) : (
+                        <ViewIcon className="size-5" />
+                      )}
+                    </button>
+                  }
                 />
                 <div className="space-y-1.5 p-2">
                   {Object.keys(passwordRequirements).map((key) => {
@@ -430,8 +425,8 @@ export function LoginForm({
                     );
                   })}
                 </div>
-              </Field>
-              <Button type="submit" disabled={isLoading} className="w-full">
+              </div>
+              <Button type="button" onClick={loginWithEmailPassword} disabled={isLoading} className="w-full">
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
             </FieldGroup>

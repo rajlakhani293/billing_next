@@ -36,7 +36,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     if (!token) {
       console.log("❌ Missing token, clearing session and returning");
       dispatch(clearSessionData());
-      router.push("/login")
+      
+      // Only redirect to login if not already on public auth pages
+      const publicRoutes = ['/login', '/signup', '/forgot-password', '/register']
+      if (!publicRoutes.some(route => pathname.startsWith(route))) {
+        router.push("/login")
+      }
       return
     }
 
@@ -50,7 +55,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
         Cookies.set("token", token, { expires: 1, path: "/" });
       } else {
-        console.error("Session data fetch failed or empty", sessionResponse);
+        // console.error("Session data fetch failed or empty", sessionResponse);
         clearSession();
         router.push("/login")
       }
@@ -74,6 +79,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const clearSession = () => {
     dispatch(clearSessionData())
     Cookies.remove("token", { path: "/" })
+    Cookies.remove("refresh_token", { path: "/" })
 
     const publicRoutes = ['/login', '/signup', '/forgot-password']
     if (!publicRoutes.some(route => pathname.startsWith(route))) {

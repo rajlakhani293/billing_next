@@ -3,10 +3,11 @@ import {
   FaCheckCircle,
   FaRegCircle
 } from 'react-icons/fa';
-import {  MdCancel} from 'react-icons/md';
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import {  MdCancel, MdOutlineInventory2} from 'react-icons/md';
+import { AiOutlineDashboard, AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { IoMdClose } from "react-icons/io";
 import { SiNextdotjs } from "react-icons/si";
+import { IoSettingsOutline } from "react-icons/io5";
 import { AudioWaveform, BadgeCheck, Bell, BookOpen, Bot, CheckIcon, ChevronDownIcon, ChevronRight, ChevronsUpDown, ChevronUpIcon, CircleIcon, Command, CreditCard, Folder, Forward, Frame, GalleryVerticalEnd, LogOut, MinusIcon, MoreHorizontal, PanelLeftIcon, PanelRightIcon, PieChart, Plus, Settings2, Sparkles, SquareTerminal, Trash2 } from 'lucide-react';
 
 export const CheckCircleIcon = FaCheckCircle;
@@ -46,9 +47,18 @@ export const Minus = MinusIcon;
 export const Circle = CircleIcon;
 export const CloseIcon = IoMdClose;
 export const NextJsIcon = SiNextdotjs;
+export const SettingIcon = IoSettingsOutline;
+export const DashboardIcon = AiOutlineDashboard;
+export const InventoryIcon = MdOutlineInventory2;
 
-export const ImagePlusIcon = () => (
-  <svg fill="none" stroke="currentColor" viewBox="0 0 48 48" aria-hidden="true">
+export const ImagePlusIcon = ({ className = "" }: { className?: string }) => (
+  <svg 
+    fill="none" 
+    stroke="currentColor" 
+    viewBox="0 0 48 48" 
+    aria-hidden="true"
+    className={className}
+  >
     <path
       d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
       strokeWidth={2}

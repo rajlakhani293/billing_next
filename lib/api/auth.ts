@@ -115,10 +115,11 @@ export const auth = createApi({
     
  
     // Logout Api
-    logout: builder.mutation<SignupResponse, number | string>({
-      query: (userId: number | string) => ({
-        url: `auth/logout/${userId}`,
+    logout: builder.mutation<SignupResponse, { refresh_token?: string }>({
+      query: ({ refresh_token }) => ({
+        url: `auth/logout`,
         method: "POST",
+        body: { refresh_token },
       }),
     }),
     

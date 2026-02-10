@@ -5,8 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation"
 import toast from "react-hot-toast"
 import * as yup from "yup"
 import { Button } from "@/components/ui/button"
-import { UnifiedInput } from "@/components/ui/unified-input"
-
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+} from "@/components/ui/field"
+import { UniFieldInput } from "@/components/ui/unifield-input"
+import { UniFieldSelect } from "@/components/ui/unifield-select"
 import {
   Select,
   SelectContent,
@@ -19,6 +24,8 @@ import { useScrollToError } from "@/lib/hooks/index"
 import { auth } from "@/lib/api/auth"
 import { Card, CardContent } from "./ui/card"
 import { locations } from "@/lib/api/locations"
+import { businessTypeOptions } from "@/lib/utils/constants"
+import { Input } from "./ui/input"
 
 interface RegisterForm {
   companyLogo: File | null
@@ -105,6 +112,7 @@ const Register = () => {
 
   const [isLoading, setIsLoading] = useState(false)
   const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   // Api
   const [registerApi] = auth.useSignupMutation()
@@ -219,6 +227,38 @@ const Register = () => {
     }))
   }
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    
+    const files = e.dataTransfer.files
+    if (files && files[0]) {
+      const file = files[0]
+      if (file.type.startsWith('image/')) {
+        setLogoFile(file)
+        setFormData(prev => ({
+          ...prev,
+          companyLogo: file
+        }))
+      } else {
+        toast.error('Please upload an image file')
+      }
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -281,7 +321,7 @@ const Register = () => {
       const result = await registerApi(payload as any).unwrap()
 
       if (result.code === 200) {
-        toast.success(result.message ||"Registration successful!")
+        toast.success(result.message || "Registration successful!")
         router.push("/login")
       } else {
         toast.error(result.message || "Registration failed. Please try again.")
@@ -310,21 +350,7 @@ const Register = () => {
     }
   }
 
-  const businessTypeOptions = [
-    { value: "1", label: "Retail / Shops" },
-    { value: "2", label: "Wholesale / Distribution" },
-    { value: "3", label: "E-commerce / Online Selling" },
-    { value: "4", label: "Manufacturing" },
-    { value: "5", label: "Trading" },
-    { value: "6", label: "Export / Import" },
-    { value: "7", label: "Services / Consulting" },
-    { value: "8", label: "IT & Software" },
-    { value: "9", label: "Construction / Real Estate" },
-    { value: "10", label: "Healthcare / Medical / Pharma" },
-    { value: "11", label: "Transport & Logistics" },
-    { value: "12", label: "Agriculture" },
-    { value: "13", label: "Others" },
-  ]
+
 
   return (
     <div className="relative min-h-screen w-full bg-white overflow-x-hidden">
@@ -355,32 +381,46 @@ const Register = () => {
 
                 <form onSubmit={handleSubmit} ref={formRef} noValidate suppressHydrationWarning className="flex flex-col gap-6 w-full max-w-full">
                   {/* Company Logo */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Company Logo
-                    </label>
-                    <div className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="hidden"
-                        id="logo-upload"
-                      />
-                      <label
-                        htmlFor="logo-upload"
-                        className="cursor-pointer flex flex-col items-center"
+                  <Field>
+                    <FieldLabel htmlFor="picture">Company Logo</FieldLabel>
+                    <div className={`w-full border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                      isDragging 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}>
+                      <div 
+                        className="flex flex-col items-center justify-center space-y-2 cursor-pointer"
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
                       >
-                        <div className="w-12 h-12 mx-auto mb-4 text-gray-400">
-                          <ImagePlusIcon />
-                        </div>
-                        <span className="text-sm text-gray-600">
-                          {logoFile ? logoFile.name : "Click to upload or drag and drop"}
-                        </span>
-                        <span className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</span>
-                      </label>
+                        <ImagePlusIcon className={`size-14 transition-colors ${
+                          isDragging ? 'text-blue-500' : 'text-gray-400'
+                        }`} />
+                        <label 
+                          htmlFor="picture" 
+                          className={`text-sm transition-colors ${
+                            isDragging 
+                              ? 'text-blue-600' 
+                              : 'text-gray-600 hover:text-gray-800'
+                          }`}
+                        >
+                          Choose company logo or drag and drop
+                        </label>
+                        <input
+                          id="picture"
+                          type="file"
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                        {logoFile && (
+                          <div className="mt-2 text-xs text-green-600">
+                            Selected: {logoFile.name}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  </Field>
 
                   {/* Section 1: Company Information */}
                   <div className="border-t pt-6">
@@ -388,112 +428,120 @@ const Register = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-10">
                       {/* Company Name */}
                       <div data-field="companyName">
-                        <UnifiedInput
+                        <UniFieldInput
+                          id="companyName"
                           label="Company Name"
                           placeholder="Enter company name"
                           value={formData.companyName}
                           onChange={(e) => handleInputChange("companyName", e.target.value)}
+                          error={errors.companyName}
+                          touched={touched.companyName}
                           required
-                          error={errors.companyName && touched.companyName ? errors.companyName : undefined}
                         />
                       </div>
 
                       {/* Legal Name */}
                       <div data-field="legalName">
-                        <UnifiedInput
+                        <UniFieldInput
+                          id="legalName"
                           label="Legal Name"
                           placeholder="Enter legal name"
                           value={formData.legalName}
                           onChange={(e) => handleInputChange("legalName", e.target.value)}
-                          error={errors.legalName && touched.legalName ? errors.legalName : undefined}
+                          error={errors.legalName}
+                          touched={touched.legalName}
                         />
                       </div>
 
                       {/* Phone */}
                       <div data-field="phone">
-                        <UnifiedInput
+                        <UniFieldInput
+                          id="phone"
                           label="Phone Number"
                           type="tel"
-                          prefix="+91"
                           placeholder="Phone Number"
                           value={formData.phone}
-                          onChange={(e) => handleInputChange("phone", e.target.value)}
                           readOnly
-                          error={errors.phone && touched.phone ? errors.phone : undefined}
+                          error={errors.phone}
+                          touched={touched.phone}
+                          containerClassName="relative"
+                          prefix="+91"
+                          className="pl-12"
                         />
                       </div>
 
                       {/* Email */}
                       <div data-field="email">
-                        <UnifiedInput
+                        <UniFieldInput
+                          id="email"
                           label="Email Address"
                           type="email"
                           placeholder="company@example.com"
                           value={formData.email}
                           onChange={(e) => handleInputChange("email", e.target.value)}
-                          error={errors.email && touched.email ? errors.email : undefined}
+                          error={errors.email}
+                          touched={touched.email}
                         />
                       </div>
 
                       {/* GSTIN */}
                       <div data-field="gstnumber">
-                        <UnifiedInput
+                        <UniFieldInput
+                          id="gstnumber"
                           label="GSTIN"
                           placeholder="Enter GST Number"
                           value={formData.gstnumber}
                           onChange={(e) => handleInputChange("gstnumber", e.target.value.toUpperCase())}
                           maxLength={15}
                           style={{ textTransform: "uppercase" }}
-                          error={errors.gstnumber && touched.gstnumber ? errors.gstnumber : undefined}
+                          error={errors.gstnumber}
+                          touched={touched.gstnumber}
                         />
                       </div>
 
                       {/* Business Type */}
                       <div data-field="business_type">
-                        <label className="block text-[15px] font-semibold text-gray-700 mb-1">
-                          Business Type
-                        </label>
-                        <Select
+                        <UniFieldSelect
+                          label="Business Type"
                           value={formData.business_type}
                           onValueChange={(value) => handleInputChange("business_type", value)}
+                          placeholder="Select Business Type"
+                          error={errors.business_type}
+                          touched={touched.business_type}
                         >
-                          <SelectTrigger className="w-full" size="lg" suppressHydrationWarning>
-                            <SelectValue placeholder="Select Business Type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {businessTypeOptions.map(option => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {errors.business_type && touched.business_type && (
-                          <p className="text-xs text-red-500 mt-1">{errors.business_type}</p>
-                        )}
+                          {businessTypeOptions?.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </UniFieldSelect>
                       </div>
 
                       {/* PAN Number */}
                       <div data-field="pan_no">
-                        <UnifiedInput
+                        <UniFieldInput
+                          id="pan_no"
                           label="PAN Number"
                           placeholder="Enter PAN Number"
                           value={formData.pan_no}
                           onChange={(e) => handleInputChange("pan_no", e.target.value.toUpperCase())}
                           maxLength={10}
                           style={{ textTransform: "uppercase" }}
-                          error={errors.pan_no && touched.pan_no ? errors.pan_no : undefined}
+                          error={errors.pan_no}
+                          touched={touched.pan_no}
                         />
                       </div>
 
                       {/* Website */}
                       <div data-field="website_url" className="md:col-span-2">
-                        <UnifiedInput
+                        <UniFieldInput
+                          id="website_url"
                           label="Website URL"
                           placeholder="https://www.example.com"
                           value={formData.website_url}
                           onChange={(e) => handleInputChange("website_url", e.target.value)}
-                          error={errors.website_url && touched.website_url ? errors.website_url : undefined}
+                          error={errors.website_url}
+                          touched={touched.website_url}
                         />
                       </div>
                     </div>
@@ -505,80 +553,59 @@ const Register = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-10">
                       {/* Country */}
                       <div data-field="country">
-                        <label className="block text-[15px] font-semibold text-gray-700 mb-1">
-                          Country <span className="text-red-500">*</span>
-                        </label>
-                        <Select
+                        <UniFieldSelect
+                          label="Country"
                           value={formData.country ? formData.country.toString() : ""}
                           onValueChange={(value) => handleInputChange("country", value)}
                           required
+                          placeholder="Select Country"
+                          error={errors.country}
+                          touched={touched.country}
                         >
-                          <SelectTrigger className="w-full" size="lg" suppressHydrationWarning>
-                            <SelectValue placeholder="Select Country" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {countries.map(country => (
-                              <SelectItem key={country.id} value={country.id.toString()}>
-                                {country.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {errors.country && touched.country && (
-                          <p className="text-xs text-red-500 mt-1">{errors.country}</p>
-                        )}
+                          {countries.map(country => (
+                            <SelectItem key={country.id} value={country.id.toString()}>
+                              {country.name}
+                            </SelectItem>
+                          ))}
+                        </UniFieldSelect>
                       </div>
 
                       {/* State */}
                       <div data-field="state">
-                        <label className="block text-[15px] font-semibold text-gray-700 mb-1">
-                          State <span className="text-red-500">*</span>
-                        </label>
-                        <Select
+                        <UniFieldSelect
+                          label="State"
                           value={formData.state ? formData.state.toString() : ""}
                           onValueChange={(value) => handleInputChange("state", value)}
                           required
+                          placeholder="Select State"
+                          error={errors.state}
+                          touched={touched.state}
                         >
-                          <SelectTrigger className="w-full" size="lg" suppressHydrationWarning>
-                            <SelectValue placeholder="Select State" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {states.map(state => (
-                              <SelectItem key={state.id} value={state.id.toString()}>
-                                {state.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {errors.state && touched.state && (
-                          <p className="text-xs text-red-500 mt-1">{errors.state}</p>
-                        )}
+                          {states.map(state => (
+                            <SelectItem key={state.id} value={state.id.toString()}>
+                              {state.name}
+                            </SelectItem>
+                          ))}
+                        </UniFieldSelect>
                       </div>
 
                       {/* City */}
                       <div data-field="city">
-                        <label className="block text-[15px] font-semibold text-gray-700 mb-1">
-                          City <span className="text-red-500">*</span>
-                        </label>
-                        <Select
+                        <UniFieldSelect
+                          label="City"
                           value={formData.city ? formData.city.toString() : ""}
                           onValueChange={(value) => handleInputChange("city", value)}
                           required
+                          placeholder="Select City"
+                          error={errors.city}
+                          touched={touched.city}
                         >
-                          <SelectTrigger className="w-full" size="lg" suppressHydrationWarning>
-                            <SelectValue placeholder="Select City" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {cities.map(city => (
-                              <SelectItem key={city.id} value={city.id.toString()}>
-                                {city.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {errors.city && touched.city && (
-                          <p className="text-xs text-red-500 mt-1">{errors.city}</p>
-                        )}
+                          {cities.map(city => (
+                            <SelectItem key={city.id} value={city.id.toString()}>
+                              {city.name}
+                            </SelectItem>
+                          ))}
+                        </UniFieldSelect>
                       </div>
 
                       {/* Address */}
@@ -600,7 +627,8 @@ const Register = () => {
 
                       {/* Pincode */}
                       <div data-field="pincode">
-                        <UnifiedInput
+                        <UniFieldInput
+                          id="pincode"
                           label="Pincode"
                           placeholder="Enter pincode"
                           value={formData.pincode}
@@ -609,7 +637,8 @@ const Register = () => {
                             handleInputChange("pincode", value)
                           }}
                           maxLength={6}
-                          error={errors.pincode && touched.pincode ? errors.pincode : undefined}
+                          error={errors.pincode}
+                          touched={touched.pincode}
                         />
                       </div>
                     </div>

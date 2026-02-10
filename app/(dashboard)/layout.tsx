@@ -1,10 +1,11 @@
 "use client";
 
-import { CustomSidebar } from "@/components/custom-sidebar";
 import { Header } from "@/components/header";
 import React from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 export default function DashboardLayout({
   children,
@@ -18,7 +19,9 @@ export default function DashboardLayout({
     <div className="flex h-screen w-full overflow-hidden">
       
       <aside className="h-full shrink-0">
-        <CustomSidebar />
+        <SidebarProvider>
+          <AppSidebar />
+        </SidebarProvider>
       </aside>
 
       <div className="flex flex-col flex-1 min-w-0"> 

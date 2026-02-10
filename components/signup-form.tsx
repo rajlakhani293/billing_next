@@ -15,7 +15,8 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card"
-import { UnifiedInput } from "./ui/unified-input"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { auth } from "@/lib/api/auth"
 
 const SignupForm = ({ className, ...props }: React.ComponentProps<"div">) => {
@@ -122,21 +123,23 @@ const SignupForm = ({ className, ...props }: React.ComponentProps<"div">) => {
           <form className="space-y-6" onSubmit={handleSendOTPForm}>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="mobile">Mobile Number</FieldLabel>
-                <UnifiedInput
-                  id="mobile"
-                  name="mobile"
-                  type="tel"
-                  prefix="+91"
-                  placeholder="Enter 10-digit mobile number"
-                  maxLength={10}
-                  pattern="[6-9][0-9]{9}"
-                  required
-                  disabled={isLoading}
-                  value={mobileNumber}
-                  // isPhoneNumber={true}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setMobileNumber(e.target.value)}
-                />
+                <Label htmlFor="mobile">Mobile Number</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">+91</span>
+                  <Input
+                    id="mobile"
+                    name="mobile"
+                    type="tel"
+                    placeholder="Enter 10-digit mobile number"
+                    maxLength={10}
+                    pattern="[6-9][0-9]{9}"
+                    required
+                    disabled={isLoading}
+                    value={mobileNumber}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMobileNumber(e.target.value)}
+                    className="pl-12"
+                  />
+                </div>
                 <FieldDescription>
                   We'll send a verification code to this number
                 </FieldDescription>

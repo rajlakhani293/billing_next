@@ -1,0 +1,203 @@
+"use client"
+
+import * as React from "react"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import {
+  SidebarGroup,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from "@/components/ui/sidebar"
+import { ChevronRightIcon } from "./AppIcon"
+import { useSidebar } from "@/components/ui/sidebar"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import Link from "next/link"
+
+export function NavMain({
+  items,
+}: {
+  items: {
+    title: string
+    url: string
+    icon?: any
+    isActive?: boolean
+    isExpanded?: boolean
+    items?: {
+      title: string
+      url: string
+      isActive?: boolean
+    }[]
+  }[]
+}) {
+  const { state } = useSidebar()
+  
+  return (
+    <SidebarGroup>
+      <SidebarMenu>
+        {items?.map((item) => {
+          // Collapsed state: Use DropdownMenu for ALL items
+          if (state === "collapsed") {
+            return (
+              <SidebarMenuItem key={item.title}>
+                <NavCollapsedItem item={item} />
+              </SidebarMenuItem>
+            )
+          }
+
+          // Expanded state: Standard rendering
+          if (!item.items?.length) {
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  tooltip={item.title}
+                  isActive={item.isActive}
+                  className="data-[active=true]:bg-blue-50 hover:data-[active=true]:bg-blue-50"
+                >
+                  <Link href={item.url}>
+                    {item.icon && <item.icon className="w-5! h-5!" />}
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          }
+
+          return (
+            <Collapsible
+              key={item.title}
+              asChild
+              defaultOpen={item.isExpanded} // Use isExpanded for open state
+              className="group/collapsible"
+            >
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton 
+                    tooltip={item.title}
+                    isActive={item.isActive} // Use strictly calculated isActive for styling
+                    className="data-[active=true]:bg-blue-100/50 hover:data-[active=true]:bg-blue-50 cursor-pointer"
+                  >
+                    {item.icon && <item.icon className="w-5! h-5!" />}
+                    <span>{item.title}</span>
+                    <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 cursor-pointer" />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    {item.items?.map((subItem) => (
+                      <SidebarMenuSubItem key={subItem.title}>
+                        <SidebarMenuSubButton 
+                          asChild 
+                          isActive={subItem.isActive}
+                          className="data-[active=true]:bg-blue-100/50 hover:data-[active=true]:bg-blue-50"
+                        >
+                          <Link href={subItem.url}>
+                            <span>{subItem.title}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
+          )
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  )
+}
+// Update NavCollapsedItem type as well
+function NavCollapsedItem({
+  item,
+}: {
+  item: {
+    title: string
+    url: string
+    icon?: any
+    isActive?: boolean
+    isExpanded?: boolean
+    items?: {
+      title: string
+      url: string
+      isActive?: boolean
+    }[]
+  }
+}) {
+  const [isOpen, setIsOpen] = React.useState(false)
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+    setIsOpen(true)
+  }
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setIsOpen(false)
+    }, 500)
+  }
+
+  return (
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
+      <DropdownMenuTrigger asChild>
+        <SidebarMenuButton
+          tooltip={undefined}
+          isActive={item.isActive || item.isExpanded} // In collapsed state, highlight if ANY child is active
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          className="data-[active=true]:bg-blue-100/50 hover:data-[active=true]:bg-blue-50 cursor-pointer"
+        >
+          {item.icon && <item.icon className="w-5! h-5!" />}
+          <span>{item.title}</span>
+          {item.items?.length ? <ChevronRightIcon className="ml-auto transition-transform duration-200" /> : null}
+        </SidebarMenuButton>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        side="right"
+        align="start"
+        className="min-w-48"
+        sideOffset={10}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {item.items?.length ? (
+          <>
+            <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {item.items.map((subItem) => (
+              <DropdownMenuItem key={subItem.title} asChild>
+                <Link href={subItem.url} className="w-full cursor-pointer">
+                  {subItem.title}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </>
+        ) : (
+          <DropdownMenuItem asChild>
+            <Link href={item.url} className="w-full cursor-pointer">
+              {item.title}
+            </Link>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
