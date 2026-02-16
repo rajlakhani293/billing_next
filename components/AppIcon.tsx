@@ -1,14 +1,20 @@
 import {
   FaSpinner,
   FaCheckCircle,
-  FaRegCircle
+  FaRegCircle,
+  FaInfo,
 } from 'react-icons/fa';
-import {  MdCancel, MdOutlineInventory2} from 'react-icons/md';
+import {  MdCancel, MdOutlineInventory2, MdDelete} from 'react-icons/md';
 import { AiOutlineDashboard, AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { IoMdClose } from "react-icons/io";
+import { IoIosCloseCircleOutline, IoMdClose } from "react-icons/io";
 import { SiNextdotjs } from "react-icons/si";
 import { IoSettingsOutline } from "react-icons/io5";
-import { AudioWaveform, BadgeCheck, Bell, BookOpen, Bot, CheckIcon, ChevronDownIcon, ChevronRight, ChevronsUpDown, ChevronUpIcon, CircleIcon, Command, CreditCard, Folder, Forward, Frame, GalleryVerticalEnd, LogOut, MinusIcon, MoreHorizontal, PanelLeftIcon, PanelRightIcon, PieChart, Plus, Settings2, Sparkles, SquareTerminal, Trash2 } from 'lucide-react';
+import { AudioWaveform, BadgeCheck, Bell, BookOpen, Bot, CheckIcon, ChevronDownIcon, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUpIcon, CircleIcon, Command, CreditCard, Folder, Forward, Frame, GalleryVerticalEnd, LogOut, MinusIcon, MoreHorizontal, PanelLeftIcon, PanelRightIcon, PieChart, Plus, Settings2, Sparkles, SquareTerminal, Trash2 } from 'lucide-react';
+import { LuArrowUpDown } from "react-icons/lu";
+import { FiEdit, FiMoreVertical } from "react-icons/fi";
+import { BiSearchAlt2 } from "react-icons/bi";
+import { HiOutlineCalendar } from "react-icons/hi";
+import { RiLoader2Line } from "react-icons/ri";
 
 export const CheckCircleIcon = FaCheckCircle;
 export const ViewIcon = AiOutlineEye;
@@ -17,6 +23,7 @@ export const CancelIcon = MdCancel;
 export const SpinnerIcon = FaSpinner;
 export const RegCircleIcon = FaRegCircle;
 export const ChevronRightIcon = ChevronRight;
+export const ChevronLeftIcon = ChevronLeft;
 export const PanelLeft = PanelLeftIcon;
 export const UpIcon = ChevronUpIcon;
 export const DownIcon = ChevronDownIcon;
@@ -50,6 +57,15 @@ export const NextJsIcon = SiNextdotjs;
 export const SettingIcon = IoSettingsOutline;
 export const DashboardIcon = AiOutlineDashboard;
 export const InventoryIcon = MdOutlineInventory2;
+export const ArrowUpDownIcon = LuArrowUpDown;
+export const MoreIcon = FiMoreVertical;
+export const DeleteIcon = MdDelete;
+export const InfoIcon = FaInfo;
+export const SearchIcon = BiSearchAlt2;
+export const CalendarIcon = HiOutlineCalendar;
+export const EditIcon = FiEdit;
+export const RoundCloseIcon = IoIosCloseCircleOutline;
+export const LoaderIcon = RiLoader2Line;
 
 export const ImagePlusIcon = ({ className = "" }: { className?: string }) => (
   <svg 

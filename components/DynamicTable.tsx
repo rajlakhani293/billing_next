@@ -1,23 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
-import {
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  MoreVertical,
-  Trash2,
-  Info,
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  Filter,
-  PlusCircle,
-  ChevronDown,
-  X,
-  Calendar as CalendarIcon,
-  Edit,
-} from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 import dayjs from "dayjs";
 import {
@@ -60,6 +43,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { ArrowUpDownIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon, DeleteIcon, DownIcon, EditIcon, InfoIcon, MoreIcon, PlusIcon, RoundCloseIcon, SearchIcon, UpIcon } from "./AppIcon";
 
 const MAX_ICONS_TO_SHOW = 3;
 const MAX_CHARS_PER_LINE = 35;
@@ -164,31 +148,31 @@ interface DynamicTableProps {
   rowActions?: (id: string, record: any) => Action[];
   onFilterChange?: (action: string, payload?: any) => void;
   currentPage?: number;
-  loading?: boolean;
   itemsPerPage?: number;
   totalItems?: number;
   onPageChange?: (page: number, pageSize?: number) => void;
   showStatus?: boolean;
   statusChangeMutation?: (args: { ids: (string | number)[], status: number, module_id?: string, entity_id?: string }) => Promise<any>;
   showDelete?: boolean;
+  showEdit?: boolean;
   deleteMutation?: (args: { ids: (string | number)[], module_id?: string, entity_id?: string }) => Promise<any>;
+  onEdit?: (record: any) => void;
   triggerRefresh?: () => void;
   sortableFields?: string[];
   deleteModalTitle?: string;
   deleteModalDescription?: string;
   onRowClick?: (row: any) => void;
-  customHover?: boolean;
   footerSummary?: FooterSummaryItem[];
   hideActions?: boolean;
+  isLoading?: boolean;
 
   tableTitle?: string;
-  title?: string; 
+  title?: string;
   searchTerm?: string;
   showSearch?: boolean;
   showDateRange?: boolean;
-  selectedDateRange?: string | null;
+  selectedDateRange?: string | null | any;
   dateFilters?: { startDate: Date | null; endDate: Date | null };
-  showEntity?: boolean;
   setAddEntityOpen?: (open: boolean) => void;
   secondaryActionButton?: React.ReactNode;
 }
@@ -202,7 +186,6 @@ const DynamicTable = ({
   onSort = () => { },
   rowActions,
   currentPage = 1,
-  loading = false,
   itemsPerPage = 10,
   totalItems = 0,
   onFilterChange = () => { },
@@ -210,15 +193,17 @@ const DynamicTable = ({
   showStatus = false,
   statusChangeMutation,
   showDelete = false,
+  showEdit = true,
   deleteMutation,
+  onEdit,
   triggerRefresh,
   sortableFields = [],
   deleteModalTitle,
   deleteModalDescription,
   onRowClick,
-  customHover = false,
   footerSummary,
   hideActions = false,
+  isLoading = false,
 
   // Integrated props
   tableTitle,
@@ -228,7 +213,6 @@ const DynamicTable = ({
   showDateRange = false,
   selectedDateRange,
   dateFilters,
-  showEntity = false,
   setAddEntityOpen,
   secondaryActionButton,
 }: DynamicTableProps) => {
@@ -344,25 +328,31 @@ const DynamicTable = ({
     const defaultActions: Action[] = [];
     const currentItem = data?.find((item) => String(item.id) === String(id));
 
-    // Always add Edit action
-    defaultActions.push({
-      key: "edit",
-      label: "Edit",
-      labelText: "Edit",
-      icon: <Edit className="h-4 w-4" />,
-      onClick: (e) => {
-        e?.stopPropagation();
-        console.log("Edit item:", id, currentItem);
-      },
-      priority: 1
-    });
+    // Add Edit action if showEdit is true
+    if (showEdit) {
+      defaultActions.push({
+        key: "edit",
+        label: "Edit",
+        labelText: "Edit",
+        icon: <EditIcon className="size-4" />,
+        onClick: (e) => {
+          e?.stopPropagation();
+          if (onEdit) {
+            onEdit(currentItem);
+          } else {
+            console.log("Edit item:", id, currentItem);
+          }
+        },
+        priority: 1
+      });
+    }
 
     if (showDelete) {
       defaultActions.push({
-        key: "999",
+        key: "delete",
         label: "Delete",
         labelText: "Delete",
-        icon: <Trash2 className="h-4 w-4" />,
+        icon: <DeleteIcon className="size-5 text-red-500" />,
         onClick: (e) => {
           e?.stopPropagation();
           setItemToDelete(id);
@@ -375,7 +365,7 @@ const DynamicTable = ({
     const customActions = rowActions ? rowActions(id, currentItem) : [];
     const allActions = [...defaultActions];
 
-    
+
     customActions.forEach((customAction) => {
       if (!allActions.some((action) => action.key === customAction.key)) {
         allActions.push(customAction);
@@ -390,7 +380,7 @@ const DynamicTable = ({
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
@@ -438,194 +428,206 @@ const DynamicTable = ({
               </span>
             )}
           </div>
-
-          <div className="flex items-center gap-2">
-            {showEntity && (
-              <>
-                <Button
-                  size="sm"
-                  onClick={() => setAddEntityOpen?.(true)}
-                  className="gap-2"
-                >
-                  <PlusCircle className="h-4 w-4" />
-                  {title}
-                </Button>
-                {secondaryActionButton}
-              </>
-            )}
-          </div>
         </div>
 
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-end">
-          <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+          <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             {showSearch && (
               <div className="relative w-full sm:max-w-xs">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => onChange("search", e.target.value)}
-                  className="w-full pl-9 h-9"
+                  className="w-full pl-9 pr-9 h-9"
                 />
+                {searchTerm && (
+                  <button
+                    onClick={() => onChange("search", "")}
+                    className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground hover:text-destructive"
+                  >
+                    <RoundCloseIcon className="size-4" />
+                  </button>
+                )}
               </div>
             )}
 
-            {showDateRange && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsDateRangeModalOpen(true)}
-                  className="h-9 w-full sm:w-auto justify-between gap-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    <span>{translateSelectedDateRange(selectedDateRange)}</span>
-                  </div>
-                  {selectedDateRange !== "FY 25-26" ? (
-                    <X
-                      className="h-4 w-4 text-muted-foreground hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onChange("dateRange", "FY 25-26");
-                      }}
-                    />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </Button>
-
-                <Dialog
-                  open={isDateRangeModalOpen}
-                  onOpenChange={setIsDateRangeModalOpen}
-                >
-                  <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                      <DialogTitle>Select Date Range</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-6 py-4">
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium leading-none">
-                          Quick Select
-                        </h4>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                          {dateRanges.slice(0, 8).map((range) => (
-                            <Button
-                              key={range}
-                              variant={
-                                selectedDateRange === range ? "default" : "outline"
-                              }
-                              size="sm"
-                              onClick={() => {
-                                onChange("dateRange", range);
-                                setIsDateRangeModalOpen(false);
-                              }}
-                              className="w-full text-xs"
-                            >
-                              {range}
-                            </Button>
-                          ))}
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                          {dateRanges.slice(8, 10).map((range) => (
-                            <Button
-                              key={range}
-                              variant={
-                                selectedDateRange === range ? "default" : "outline"
-                              }
-                              size="sm"
-                              onClick={() => {
-                                onChange("dateRange", range);
-                                setIsDateRangeModalOpen(false);
-                              }}
-                              className="w-full text-xs"
-                            >
-                              {range}
-                            </Button>
-                          ))}
-                        </div>
+            <div className="flex gap-2">
+              {showDateRange && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsDateRangeModalOpen(true)}
+                    className="h-9 w-full sm:w-auto justify-between gap-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                      <span>{translateSelectedDateRange(selectedDateRange)}</span>
+                    </div>
+                    {selectedDateRange !== "FY 25-26" ? (
+                      <div
+                        className="h-4 w-4 text-muted-foreground hover:text-destructive cursor-pointer flex items-center justify-center"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onChange("dateRange", "FY 25-26");
+                        }}
+                      >
+                        <RoundCloseIcon className="size-5 hover:text-red-500" />
                       </div>
+                    ) : (
+                      <DownIcon className="size-5" />
+                    )}
+                  </Button>
 
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium leading-none">
-                          Financial Year
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {dateRanges.slice(10).map((range) => (
-                            <Button
-                              key={range}
-                              variant={
-                                selectedDateRange === range ? "secondary" : "outline"
-                              }
-                              size="sm"
-                              onClick={() => {
-                                onChange("dateRange", range);
-                                setIsDateRangeModalOpen(false);
-                              }}
-                              className={cn(
+                  <Dialog
+                    open={isDateRangeModalOpen}
+                    onOpenChange={setIsDateRangeModalOpen}
+                  >
+                    <DialogContent className="sm:max-w-[600px]">
+                      <DialogHeader>
+                        <DialogTitle>Select Date Range</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid gap-6 py-4">
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium leading-none">
+                            Quick Select
+                          </h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {dateRanges.slice(0, 8).map((range) => (
+                              <Button
+                                key={range}
+                                variant={
+                                  selectedDateRange === range ? "default" : "outline"
+                                }
+                                size="sm"
+                                onClick={() => {
+                                  onChange("dateRange", range);
+                                  setIsDateRangeModalOpen(false);
+                                }}
+                                className="w-full text-xs"
+                              >
+                                {range}
+                              </Button>
+                            ))}
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {dateRanges.slice(8, 10).map((range) => (
+                              <Button
+                                key={range}
+                                variant={
+                                  selectedDateRange === range ? "default" : "outline"
+                                }
+                                size="sm"
+                                onClick={() => {
+                                  onChange("dateRange", range);
+                                  setIsDateRangeModalOpen(false);
+                                }}
+                                className="w-full text-xs"
+                              >
+                                {range}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium leading-none">
+                            Financial Year
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {dateRanges.slice(10).map((range) => (
+                              <Button
+                                key={range}
+                                variant={
+                                  selectedDateRange === range ? "secondary" : "outline"
+                                }
+                                size="sm"
+                                onClick={() => {
+                                  onChange("dateRange", range);
+                                  setIsDateRangeModalOpen(false);
+                                }}
+                                className={cn(
                                   "text-xs",
                                   selectedDateRange === range && "bg-green-100 text-green-900 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-300"
-                              )}
-                            >
-                              {range}
-                            </Button>
-                          ))}
+                                )}
+                              >
+                                {range}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 pt-4 border-t">
+                          <Button
+                            variant={selectedDateRange === "Custom" ? "default" : "ghost"}
+                            className="w-full justify-start dashed border-dashed border"
+                            onClick={() => onChange("dateRange", "Custom")}
+                          >
+                            {selectedDateRange === "Custom" ? "✓ " : "+ "} Custom Range
+                          </Button>
+
+                          {selectedDateRange === "Custom" && (
+                            <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
+                              <div className="grid gap-1.5 w-full">
+                                <label className="text-xs font-medium text-muted-foreground">Start Date</label>
+                                <Input
+                                  type="date"
+                                  value={dateFilters?.startDate ? dayjs(dateFilters.startDate).format('YYYY-MM-DD') : ''}
+                                  onChange={(e) => {
+                                    const start = e.target.value ? dayjs(e.target.value).startOf('day').toDate() : null;
+                                    const end = dateFilters?.endDate;
+                                    onChange("customDate", [start, end]);
+                                  }}
+                                />
+                              </div>
+                              <div className="grid gap-1.5 w-full">
+                                <label className="text-xs font-medium text-muted-foreground">End Date</label>
+                                <Input
+                                  type="date"
+                                  value={dateFilters?.endDate ? dayjs(dateFilters.endDate).format('YYYY-MM-DD') : ''}
+                                  onChange={(e) => {
+                                    const end = e.target.value ? dayjs(e.target.value).endOf('day').toDate() : null;
+                                    const start = dateFilters?.startDate;
+                                    onChange("customDate", [start, end]);
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
+                    </DialogContent>
+                  </Dialog>
+                </>
+              )}
 
-                      <div className="space-y-4 pt-4 border-t">
-                        <Button
-                          variant={selectedDateRange === "Custom" ? "default" : "ghost"}
-                          className="w-full justify-start dashed border-dashed border"
-                          onClick={() => onChange("dateRange", "Custom")}
-                        >
-                           {selectedDateRange === "Custom" ? "✓ " : "+ "} Custom Range
-                        </Button>
-
-                        {selectedDateRange === "Custom" && (
-                          <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
-                              <div className="grid gap-1.5 w-full">
-                                  <label className="text-xs font-medium text-muted-foreground">Start Date</label>
-                                  <Input
-                                      type="date"
-                                      value={dateFilters?.startDate ? dayjs(dateFilters.startDate).format('YYYY-MM-DD') : ''}
-                                      onChange={(e) => {
-                                          const start = e.target.value ? dayjs(e.target.value).startOf('day').toDate() : null;
-                                          const end = dateFilters?.endDate;
-                                          onChange("customDate", [start, end]);
-                                      }}
-                                  />
-                              </div>
-                              <div className="grid gap-1.5 w-full">
-                                  <label className="text-xs font-medium text-muted-foreground">End Date</label>
-                                  <Input
-                                      type="date"
-                                      value={dateFilters?.endDate ? dayjs(dateFilters.endDate).format('YYYY-MM-DD') : ''}
-                                      onChange={(e) => {
-                                          const end = e.target.value ? dayjs(e.target.value).endOf('day').toDate() : null;
-                                          const start = dateFilters?.startDate;
-                                          onChange("customDate", [start, end]);
-                                      }}
-                                  />
-                              </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </>
-            )}
+              <div className="flex items-center gap-2">
+                {title && setAddEntityOpen && (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => setAddEntityOpen?.(true)}
+                      className="gap-2"
+                    >
+                      <PlusIcon className="h-4 w-4" />
+                      {title}
+                    </Button>
+                    {secondaryActionButton}
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Table Container */}
-      <div className="w-full overflow-hidden border rounded-lg shadow-sm bg-background">
+      <div className="w-full overflow-hidden border rounded-lg">
         <div className={`relative ${data?.length > 0 ? "max-h-[calc(100vh-300px)] overflow-y-auto" : "h-[calc(100vh-300px)]"}`}>
           <Table>
-            <TableHeader className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm">
+            <TableHeader className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-3xl">
               <TableRow className="hover:bg-muted/90 border-b">
                 <TableHead className="w-16 text-center">
                   <div className="flex flex-col py-2">
@@ -664,12 +666,12 @@ const DynamicTable = ({
                       {sortableFields.includes(col.key) && (
                         sortConfig.key === col.key ? (
                           sortConfig.direction === "ascending" ? (
-                            <ArrowUp className="w-3 h-3 text-primary" />
+                            <UpIcon className="w-3 h-3 text-primary" />
                           ) : (
-                            <ArrowDown className="w-3 h-3 text-primary" />
+                            <DownIcon className="w-3 h-3 text-primary" />
                           )
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-muted-foreground opacity-50" />
+                          <ArrowUpDownIcon className="w-3 h-3 text-muted-foreground opacity-50" />
                         )
                       )}
                     </div>
@@ -681,7 +683,19 @@ const DynamicTable = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.length > 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length + (hideActions ? 0 : 1) + 1}
+                    className="h-24 text-center"
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                      <span className="text-muted-foreground">Loading...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : data?.length > 0 ? (
                 data.map((row, index) => {
                   const isDisabledRow = false; // Add logic if needed
                   const allActions = getRowActions(row.id);
@@ -705,20 +719,20 @@ const DynamicTable = ({
                       {columns.map((col) => {
                         const rawValue = col.render
                           ? col.render(
-                              row[col.key],
-                              {
-                                row,
-                                onChange: (action: string, payload?: any) =>
-                                  onChange(action, { ...payload, id: row.id }),
-                              },
-                              index
-                            )
+                            row[col.key],
+                            {
+                              row,
+                              onChange: (action: string, payload?: any) =>
+                                onChange(action, { ...payload, id: row.id }),
+                            },
+                            index
+                          )
                           : row[col.key] ?? <span className="text-muted-foreground">-</span>;
 
                         return (
                           <TableCell
-                             key={col.key}
-                             className={cn("py-3", isDisabledRow && "text-muted-foreground")}
+                            key={col.key}
+                            className={cn("py-3", isDisabledRow && "text-muted-foreground")}
                           >
                             <TableCellContent value={rawValue} />
                           </TableCell>
@@ -752,12 +766,12 @@ const DynamicTable = ({
                                 </TooltipProvider>
                               )
                             ))}
-                            
+
                             {dropdownActions.length > 0 && !isDisabledRow && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreVertical className="h-4 w-4" />
+                                    <MoreIcon className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
@@ -786,12 +800,12 @@ const DynamicTable = ({
                 })
               ) : (
                 <TableRow>
-                   <TableCell
-                      colSpan={columns.length + (hideActions ? 0 : 1) + 1}
-                      className="h-24 text-center"
-                   >
-                     No Data available
-                   </TableCell>
+                  <TableCell
+                    colSpan={columns.length + (hideActions ? 0 : 1) + 1}
+                    className="h-24 text-center"
+                  >
+                    No Data available
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -802,6 +816,7 @@ const DynamicTable = ({
       <div ref={paginationSentinelRef} className="h-px w-full" aria-hidden />
 
       {/* Footer / Pagination */}
+      {totalItems > 20 && (
       <div
         className={cn(
           "sticky bottom-4 z-50 transition-all duration-300",
@@ -809,109 +824,108 @@ const DynamicTable = ({
         )}
       >
         <div className={cn(
-            "flex flex-col sm:flex-row items-center justify-between gap-4 p-3 rounded-lg bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 border shadow-sm",
-             isFooterStuck && "shadow-lg border-primary/20"
+          "flex flex-col sm:flex-row items-center justify-between gap-4 p-3 rounded-lg bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 border shadow-sm",
+          isFooterStuck && "shadow-lg border-primary/20"
         )}>
-           
-           {/* Summary Items */}
-           <div className="flex flex-wrap items-center gap-3">
-              {footerSummary?.map((item, index) => (
-                  <TooltipProvider key={index}>
-                      <Tooltip>
-                          <TooltipTrigger asChild>
-                              <div className={cn(
-                                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-md border bg-muted/50 text-sm font-medium",
-                                  item.className
-                              )}>
-                                 <span className="text-muted-foreground text-xs">{item.label}</span>
-                                 <span className="flex items-center gap-1">
-                                    {item.prefix} {item.value}
-                                    {item.tooltip && <Info className="h-3.5 w-3.5 text-muted-foreground" />}
-                                 </span>
-                              </div>
-                          </TooltipTrigger>
-                          {item.tooltip && <TooltipContent>{item.tooltip}</TooltipContent>}
-                      </Tooltip>
-                  </TooltipProvider>
+
+          {/* Summary Items */}
+          <div className="flex flex-wrap items-center gap-3">
+            {footerSummary?.map((item, index) => (
+              <TooltipProvider key={index}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={cn(
+                      "inline-flex items-center gap-2 px-3 py-1.5 rounded-md border bg-muted/50 text-sm font-medium",
+                      item.className
+                    )}>
+                      <span className="text-muted-foreground text-xs">{item.label}</span>
+                      <span className="flex items-center gap-1">
+                        {item.prefix} {item.value}
+                        {item.tooltip && <InfoIcon className="h-3.5 w-3.5 text-muted-foreground" />}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  {item.tooltip && <TooltipContent>{item.tooltip}</TooltipContent>}
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center gap-4 ml-auto">
+              <Select
+                value={String(itemsPerPage)}
+                onValueChange={(val) => onChange("itemsPerPage", Number(val))}
+              >
+                <SelectTrigger className="w-[130px] h-9">
+                  <SelectValue placeholder="Rows per page" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="20">20 / page</SelectItem>
+                  <SelectItem value="50">50 / page</SelectItem>
+                  <SelectItem value="100">100 / page</SelectItem>
+                </SelectContent>
+              </Select>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeftIcon className="h-4 w-4" />
+              </Button>
+
+              {getPageNumbers().map((page, i) => (
+                page === '...' ? (
+                  <span key={i} className="px-2 text-muted-foreground">...</span>
+                ) : (
+                  <Button
+                    key={i}
+                    variant={currentPage === page ? "default" : "ghost"}
+                    size="sm"
+                    className="h-9 w-9 bg-blue-600"
+                    onClick={() => onPageChange(Number(page))}
+                  >
+                    {page}
+                  </Button>
+                )
               ))}
-           </div>
 
-           {/* Pagination */}
-           <div className="flex items-center gap-4 ml-auto">
-               {totalItems > 20 && (
-                   <Select
-                      value={String(itemsPerPage)}
-                      onValueChange={(val) => onChange("itemsPerPage", Number(val))}
-                   >
-                       <SelectTrigger className="w-[130px] h-9">
-                           <SelectValue placeholder="Rows per page" />
-                       </SelectTrigger>
-                       <SelectContent>
-                           <SelectItem value="20">20 / page</SelectItem>
-                           <SelectItem value="50">50 / page</SelectItem>
-                           <SelectItem value="100">100 / page</SelectItem>
-                       </SelectContent>
-                   </Select>
-               )}
-
-               <div className="flex items-center gap-1">
-                   <Button
-                       variant="outline"
-                       size="icon"
-                       className="h-9 w-9"
-                       onClick={() => onPageChange(currentPage - 1)}
-                       disabled={currentPage === 1}
-                   >
-                       <ChevronLeft className="h-4 w-4" />
-                   </Button>
-                   
-                   {getPageNumbers().map((page, i) => (
-                       page === '...' ? (
-                           <span key={i} className="px-2 text-muted-foreground">...</span>
-                       ) : (
-                           <Button
-                               key={i}
-                               variant={currentPage === page ? "default" : "ghost"}
-                               size="sm"
-                               className="h-9 w-9"
-                               onClick={() => onPageChange(Number(page))}
-                           >
-                               {page}
-                           </Button>
-                       )
-                   ))}
-
-                   <Button
-                       variant="outline"
-                       size="icon"
-                       className="h-9 w-9"
-                       onClick={() => onPageChange(currentPage + 1)}
-                       disabled={currentPage === totalPages}
-                   >
-                       <ChevronRight className="h-4 w-4" />
-                   </Button>
-               </div>
-           </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRightIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
+      )}
 
-       {/* Delete Modal */}
+      {/* Delete Modal */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent>
-            <DialogHeader>
-                <DialogTitle>{deleteModalTitle || "Confirm Delete"}</DialogTitle>
-                <DialogDescription>
-                    {deleteModalDescription || "Are you sure you want to delete this item? This action cannot be undone."}
-                </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="gap-2 sm:gap-0">
-                <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
-                    Cancel
-                </Button>
-                <Button variant="destructive" onClick={handleDeleteConfirm}>
-                    Delete
-                </Button>
-            </DialogFooter>
+          <DialogHeader>
+            <DialogTitle>{deleteModalTitle || "Confirm Delete"}</DialogTitle>
+            <DialogDescription>
+              {deleteModalDescription || "Are you sure you want to delete this item? This action cannot be undone."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

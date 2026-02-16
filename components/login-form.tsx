@@ -129,7 +129,7 @@ export function LoginForm({
   }
   
   // Reusable function to handle post-authentication tasks
-  const handlePostAuth = useCallback(async (userData: any, token: string, redirectUrl?: string) => {
+  const handlePostAuth = useCallback(async (token: string, redirectUrl?: string) => {
     // Set cookies
     if (token) {
       Cookies.set("token", token, {
@@ -163,12 +163,7 @@ export function LoginForm({
         const token = result?.data?.token;
         
         if (token) {
-          const userData = {
-            id: result?.data?.user?.id,
-            shop_id: result?.data?.user?.shop_id,
-          };
-          
-          await handlePostAuth(userData, token)
+          await handlePostAuth(token)
           return token
         } else {
           toast.error(result.message || "OTP verification failed")
@@ -211,11 +206,10 @@ export function LoginForm({
       }).unwrap()
 
       const token = response?.data?.token
-      const userData = response?.data?.user
 
-      if (token && userData) {
+      if (token) {
         toast.success("User Login successfully!")
-        await handlePostAuth(userData, token, "/dashboard")
+        await handlePostAuth(token, "/dashboard")
       } else {
         toast.error("Invalid Credentials")
       }

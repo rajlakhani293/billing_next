@@ -81,14 +81,14 @@ export function NavMain({
             <Collapsible
               key={item.title}
               asChild
-              defaultOpen={item.isExpanded} // Use isExpanded for open state
+              defaultOpen={item.isExpanded}
               className="group/collapsible"
             >
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton 
                     tooltip={item.title}
-                    isActive={item.isActive} // Use strictly calculated isActive for styling
+                    isActive={item.isActive}
                     className="data-[active=true]:bg-blue-100/50 hover:data-[active=true]:bg-blue-50 cursor-pointer"
                   >
                     {item.icon && <item.icon className="w-5! h-5!" />}
@@ -152,7 +152,7 @@ function NavCollapsedItem({
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
       setIsOpen(false)
-    }, 500)
+    }, 500) 
   }
 
   return (
@@ -174,7 +174,7 @@ function NavCollapsedItem({
         side="right"
         align="start"
         className="min-w-48"
-        sideOffset={10}
+        sideOffset={14}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -184,7 +184,7 @@ function NavCollapsedItem({
             <DropdownMenuSeparator />
             {item.items.map((subItem) => (
               <DropdownMenuItem key={subItem.title} asChild>
-                <Link href={subItem.url} className="w-full cursor-pointer">
+                <Link href={subItem.url} className={`w-full cursor-pointer ${subItem.isActive ? 'bg-blue-50' : ''}`}>
                   {subItem.title}
                 </Link>
               </DropdownMenuItem>
@@ -192,7 +192,7 @@ function NavCollapsedItem({
           </>
         ) : (
           <DropdownMenuItem asChild>
-            <Link href={item.url} className="w-full cursor-pointer">
+            <Link href={item.url} className={`w-full cursor-pointer ${item.isActive ? 'bg-blue-50' : ''}`}>
               {item.title}
             </Link>
           </DropdownMenuItem>

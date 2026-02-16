@@ -4,9 +4,10 @@ import { useState, useMemo } from "react";
 import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
 import { items } from "@/lib/api/items";
-import { ItemForm } from "./createUpdate";
+import { CategoryForm } from "./createUpdate";
+import { EditIcon } from "@/components/AppIcon";
 
-const Items = () => {
+const Categories = () => {
   const [isAddEntityOpen, setAddEntityOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const {
@@ -24,12 +25,17 @@ const Items = () => {
     dateFilters,
     itemsPerPage,
   } = useTableData({
-    getMaster: items.useGetItemsDataMutation,
+    getMaster: items.useGetItemCategoriesDataMutation,
     itemsPerPage: 20,
   });
 
   const handleCreateItem = () => {
     setEditingItem(null);
+    setAddEntityOpen(true);
+  };
+
+  const handleEditItem = (item: any) => {
+    setEditingItem(item);
     setAddEntityOpen(true);
   };
 
@@ -41,28 +47,12 @@ const Items = () => {
   const columns = useMemo(
     () => [
       {
-        key: "item_name",
-        title: "Item Name",
+        key: "name",
+        title: "Category Name",
       },
       {
-        key: "item_code",
-        title: "Item Code",
-      },
-      {
-        key: "category",
-        title: "Category",
-      },
-      {
-        key: "current_stock",
-        title: "Current Stock"
-      },
-      {
-        key: "selling_price",
-        title: "Sales Price",
-      },
-      {
-        key: "brand",
-        title: "Brand",
+        key: "description",
+        title: "Description",
       }
     ],
     [currentPage, itemsPerPage]
@@ -72,8 +62,8 @@ const Items = () => {
     <>
       <div className="p-4">
         <DynamicTable
-          tableTitle="Items"
-          title="Add Item"
+          tableTitle="Categories"
+          title="Add Category"
           showSearch={true}
           searchTerm={searchTerm}
           showDateRange={true}
@@ -92,21 +82,23 @@ const Items = () => {
           onPageChange={setCurrentPage}
           showDelete={true}
           isLoading={isLoading}
+          onEdit={handleEditItem}
         />
       </div>
 
-      <ItemForm
+      <CategoryForm
         isOpen={isAddEntityOpen}
         onClose={handleClose}
         onSuccess={() => {
           console.log("Form submitted successfully");
         }}
+        id={editingItem?.id}
         initialData={editingItem}
         isEditing={!!editingItem}
-        title={editingItem ? "Edit Item" : "Create New Item"}
+        title={editingItem ? "Edit Category" : "Create New Category"}
       />
     </>
   );
 };
 
-export default Items;
+export default Categories;

@@ -55,15 +55,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const navMain = React.useMemo(() => {
     return data.navMain.map((item) => {
-      // Check if any child item is active
       const isChildActive = item.items?.some((subItem) => pathname === subItem.url)
-      // Check if the item itself is active
       const isSelfActive = pathname === item.url
       
       return {
         ...item,
-        isActive: isSelfActive, // Only true if the main item itself is active
-        isExpanded: isSelfActive || isChildActive, // True if self or child is active (for expansion)
+        isActive: isSelfActive,
+        isExpanded: isSelfActive || isChildActive,
         items: item.items?.map(subItem => ({
            ...subItem,
            isActive: pathname === subItem.url
