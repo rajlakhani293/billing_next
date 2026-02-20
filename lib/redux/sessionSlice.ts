@@ -24,33 +24,6 @@ interface Shop {
   state_id?: number;
 }
 
-interface Module {
-  id: number;
-  name: string;
-  code: string;
-  description?: string;
-  icon?: string;
-}
-
-interface Menu {
-  id: number;
-  name: string;
-  code: string;
-  url?: string;
-  icon?: string;
-  parent_id?: number;
-  order?: number;
-  module_id?: number;
-}
-
-interface Permission {
-  id: number;
-  name: string;
-  code: string;
-  description?: string;
-  module_id?: number;
-}
-
 interface SessionState {
   isUnauthorized: boolean;
   permissionError: { 
@@ -67,9 +40,6 @@ interface SessionState {
   user: User | null;
   shop: Shop | null;
   shopList: any[];
-  menus: Menu[];
-  modules: Module[];
-  permissions: Permission[];
   isSessionLoaded: boolean;
 }
 
@@ -81,9 +51,6 @@ const initialState: SessionState = {
   user: null,
   shop: null,
   shopList: [],
-  menus: [],
-  modules: [],
-  permissions: [],
   isSessionLoaded: false,
 };
 
@@ -109,21 +76,11 @@ const sessionSlice = createSlice({
       if (data.user) state.user = data.user;
       if (data.shop) state.shop = data.shop;
       if (data.shop_list) state.shopList = data.shop_list;
-      if (data.sidebarMenu) {
-        state.menus = data.sidebarMenu;
-        // Extract modules from sidebarMenu
-        state.modules = data.sidebarMenu.flatMap((menu: any) => menu.modules || []);
-      }
-      if (data.user?.permissions) state.permissions = data.user.permissions;
-      state.isSessionLoaded = true;
     },
     clearSessionData: (state) => {
       state.user = null;
       state.shop = null;
       state.shopList = [];
-      state.menus = [];
-      state.modules = [];
-      state.permissions = [];
       state.isSessionLoaded = false;
       state.isUnauthorized = false;
       state.permissionError = null;

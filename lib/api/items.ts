@@ -4,28 +4,44 @@ import { createMutation, deleteMutation, getMutation, patchMutation, postMutatio
 
 const endpointsConfig = {
   //  Item Endpoints
-  getItemsDropdown: { query: postMutation("dropdown-list") },
+  getItemsDropdown: { query: () => getMutation("dropdown-list") },
   getItemsData: { query: postMutation("get-transactions") },
   createItem: { query: createMutation("/") },
-  editItem: { query: (body: any) => putMutation("", body) },
+  editItem: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`/${id}`, payLoad) },
   deleteItem: { query: deleteMutation("delete") },
   getItemById: { query: ({ id }: { id: number }) => getMutation(`${id}`) },
 
   // Item Category Endpoints
-  getItemCategoriesDropdown: { query: postMutation("categories/dropdown-list") },
+  getItemCategoriesDropdown: { query: () => getMutation("categories/dropdown-list") },
   getItemCategoriesData: { query: postMutation("categories/get-transactions") },
   createItemCategory: { query: createMutation("categories/") },
-  editItemCategory: { query: (body: any) => putMutation("categories/", body) },
+  editItemCategory: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`categories/${id}`, payLoad) },
   deleteItemCategory: { query: deleteMutation("categories/delete") },
   getItemCategoryById: { query: ({ id }: { id: number }) => getMutation(`categories/${id}`) },
 
    // Item Unit Endpoints
-  getItemUnitsDropdown: { query: postMutation("units/dropdown-list") },
+  getItemUnitsDropdown: { query: () => getMutation("units/dropdown-list") },
   getItemUnitsData: { query: postMutation("units/get-transactions") },
   createItemUnit: { query: createMutation("units/") },
-  editItemUnit: { query: (body: any) => putMutation("units/", body) },
+  editItemUnit: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`units/${id}`, payLoad) },
   deleteItemUnit: { query: deleteMutation("units/delete") },
   getItemUnitById: { query: ({ id }: { id: number }) => getMutation(`units/${id}`) },
+
+  // Taxes
+  getTaxesDropdown: { query: () => getMutation("taxes/dropdown-list") },
+  getTaxesData: { query: postMutation("taxes/get-transactions") },
+  createTax: { query: createMutation("taxes/") },
+  editTax: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`taxes/${id}`, payLoad) },
+  deleteTax: { query: deleteMutation("taxes/delete") },
+  getTaxById: { query: ({ id }: { id: number }) => getMutation(`taxes/${id}`) },
+
+  // Brand
+  getBrandsDropdown: { query: () => getMutation("brands/dropdown-list") },
+  getBrandsData: { query: postMutation("brands/get-transactions") },
+  createBrand: { query: createMutation("brands/") },
+  editBrand: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`brands/${id}`, payLoad) },
+  deleteBrand: { query: deleteMutation("brands/delete") },
+  getBrandById: { query: ({ id }: { id: number }) => getMutation(`brands/${id}`) },
 
 }
 

@@ -45,7 +45,7 @@ export default function DashboardLayout({
           <Header />
           <main
             className={cn(
-              "flex-1 overflow-y-auto shadow-md border-gray-100",
+              "flex-1 overflow-y-auto shadow-md bg-gray-50",
               !isSettingsPage && "m-1"
             )}
           >

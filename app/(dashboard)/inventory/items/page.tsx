@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
 import { items } from "@/lib/api/items";
-import { ItemForm } from "./createUpdate";
+import { useRouter } from "next/navigation";
 
 const Items = () => {
-  const [isAddEntityOpen, setAddEntityOpen] = useState<boolean>(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const router = useRouter();
   const {
     orders,
     totalItems,
@@ -29,13 +28,11 @@ const Items = () => {
   });
 
   const handleCreateItem = () => {
-    setEditingItem(null);
-    setAddEntityOpen(true);
+    router.push('/inventory/items/create');
   };
 
-  const handleClose = () => {
-    setAddEntityOpen(false);
-    setEditingItem(null);
+  const handleEditItem = (item: any) => {
+    router.push(`/inventory/items/${item.id}`);
   };
 
   const columns = useMemo(
@@ -69,43 +66,31 @@ const Items = () => {
   );
 
   return (
-    <>
-      <div className="p-4">
-        <DynamicTable
-          tableTitle="Items"
-          title="Add Item"
-          showSearch={true}
-          searchTerm={searchTerm}
-          showDateRange={true}
-          selectedDateRange={selectedDateRange}
-          dateFilters={dateFilters}
-          setAddEntityOpen={handleCreateItem}
-          onFilterChange={handleFilterChange}
-          data={orders}
-          columns={columns}
-          sortConfig={sortConfig}
-          onSort={handleSort}
-          sortableFields={sortableFields}
-          currentPage={currentPage}
-          itemsPerPage={itemsPerPage}
-          totalItems={totalItems}
-          onPageChange={setCurrentPage}
-          showDelete={true}
-          isLoading={isLoading}
-        />
-      </div>
-
-      <ItemForm
-        isOpen={isAddEntityOpen}
-        onClose={handleClose}
-        onSuccess={() => {
-          console.log("Form submitted successfully");
-        }}
-        initialData={editingItem}
-        isEditing={!!editingItem}
-        title={editingItem ? "Edit Item" : "Create New Item"}
+    <div className="p-4">
+      <DynamicTable
+        tableTitle="Items"
+        title="Add Item"
+        showSearch={true}
+        searchTerm={searchTerm}
+        showDateRange={true}
+        selectedDateRange={selectedDateRange}
+        dateFilters={dateFilters}
+        setAddEntityOpen={handleCreateItem}
+        onFilterChange={handleFilterChange}
+        data={orders}
+        columns={columns}
+        sortConfig={sortConfig}
+        onSort={handleSort}
+        sortableFields={sortableFields}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        totalItems={totalItems}
+        onPageChange={setCurrentPage}
+        showDelete={true}
+        isLoading={isLoading}
+        onEdit={handleEditItem}
       />
-    </>
+    </div>
   );
 };
 

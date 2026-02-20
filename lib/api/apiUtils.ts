@@ -1,5 +1,4 @@
 import Cookies from "js-cookie";
-import { getLocalStorageItem } from "../utils/localStorageHelper";
 
 export const prepareHeadersWithToken = (headers: Headers) => {
   const token = Cookies.get("token");

@@ -27,14 +27,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Input,
-} from "@/components/ui/input";
+  UniFieldInput,
+} from "@/components/ui/unifield-input";
 import {
-  Select,
-  SelectContent,
+  UniFieldSelect,
+} from "@/components/ui/unifield-select";
+import {
   SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import {
   Tooltip,
@@ -435,7 +434,7 @@ const DynamicTable = ({
             {showSearch && (
               <div className="relative w-full sm:max-w-xs">
                 <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
+                <UniFieldInput
                   type="text"
                   placeholder="Search..."
                   value={searchTerm}
@@ -572,7 +571,7 @@ const DynamicTable = ({
                             <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
                               <div className="grid gap-1.5 w-full">
                                 <label className="text-xs font-medium text-muted-foreground">Start Date</label>
-                                <Input
+                                <UniFieldInput
                                   type="date"
                                   value={dateFilters?.startDate ? dayjs(dateFilters.startDate).format('YYYY-MM-DD') : ''}
                                   onChange={(e) => {
@@ -584,7 +583,7 @@ const DynamicTable = ({
                               </div>
                               <div className="grid gap-1.5 w-full">
                                 <label className="text-xs font-medium text-muted-foreground">End Date</label>
-                                <Input
+                                <UniFieldInput
                                   type="date"
                                   value={dateFilters?.endDate ? dayjs(dateFilters.endDate).format('YYYY-MM-DD') : ''}
                                   onChange={(e) => {
@@ -853,19 +852,16 @@ const DynamicTable = ({
 
           {/* Pagination */}
           <div className="flex items-center gap-4 ml-auto">
-              <Select
+              <UniFieldSelect
                 value={String(itemsPerPage)}
                 onValueChange={(val) => onChange("itemsPerPage", Number(val))}
+                placeholder="Rows per page"
+                containerClassName="w-[130px] h-9"
               >
-                <SelectTrigger className="w-[130px] h-9">
-                  <SelectValue placeholder="Rows per page" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="20">20 / page</SelectItem>
-                  <SelectItem value="50">50 / page</SelectItem>
-                  <SelectItem value="100">100 / page</SelectItem>
-                </SelectContent>
-              </Select>
+                <SelectItem value="20">20 / page</SelectItem>
+                <SelectItem value="50">50 / page</SelectItem>
+                <SelectItem value="100">100 / page</SelectItem>
+              </UniFieldSelect>
 
             <div className="flex items-center gap-1">
               <Button
@@ -918,7 +914,7 @@ const DynamicTable = ({
               {deleteModalDescription || "Are you sure you want to delete this item? This action cannot be undone."}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
               Cancel
             </Button>

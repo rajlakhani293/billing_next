@@ -25,6 +25,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import Link from "next/link"
 
 export function NavMain({
@@ -139,7 +144,9 @@ function NavCollapsedItem({
   }
 }) {
   const [isOpen, setIsOpen] = React.useState(false)
+  const [isSingleItemOpen, setIsSingleItemOpen] = React.useState(false)
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const singleTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
   const handleMouseEnter = () => {
     if (timeoutRef.current) {
@@ -155,18 +162,67 @@ function NavCollapsedItem({
     }, 500) 
   }
 
+  const handleSingleItemMouseEnter = () => {
+    if (singleTimeoutRef.current) {
+      clearTimeout(singleTimeoutRef.current)
+      singleTimeoutRef.current = null
+    }
+    setIsSingleItemOpen(true)
+  }
+
+  const handleSingleItemMouseLeave = () => {
+    singleTimeoutRef.current = setTimeout(() => {
+      setIsSingleItemOpen(false)
+    }, 500) 
+  }
+
+  // For items without sub-items, show direct link instead of dropdown
+  if (!item.items?.length) {
+    return (
+      <DropdownMenu open={isSingleItemOpen} onOpenChange={setIsSingleItemOpen} modal={false}>
+        <DropdownMenuTrigger asChild>
+          <SidebarMenuButton
+            tooltip={undefined}
+            isActive={item.isActive}
+            onMouseEnter={handleSingleItemMouseEnter}
+            onMouseLeave={handleSingleItemMouseLeave}
+            className="data-[active=true]:bg-blue-100/50 hover:data-[active=true]:bg-blue-50 cursor-pointer"
+          >
+            <Link href={item.url} className="flex items-center justify-center w-full">
+              {item.icon && <item.icon className="w-5! h-5!" />}
+            </Link>
+          </SidebarMenuButton>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          side="right"
+          align="start"
+          className="min-w-48"
+          sideOffset={14}
+          onMouseEnter={handleSingleItemMouseEnter}
+          onMouseLeave={handleSingleItemMouseLeave}
+        >
+          <DropdownMenuItem asChild>
+            <Link href={item.url} className={`w-full cursor-pointer ${item.isActive ? 'bg-blue-50' : ''}`}>
+              {item.title}
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
+
+  // For items with sub-items, show dropdown
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
       <DropdownMenuTrigger asChild>
         <SidebarMenuButton
           tooltip={undefined}
-          isActive={item.isActive || item.isExpanded} // In collapsed state, highlight if ANY child is active
+          isActive={item.isActive || item.isExpanded}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           className="data-[active=true]:bg-blue-100/50 hover:data-[active=true]:bg-blue-50 cursor-pointer"
         >
           {item.icon && <item.icon className="w-5! h-5!" />}
-          <span>{item.title}</span>
           {item.items?.length ? <ChevronRightIcon className="ml-auto transition-transform duration-200" /> : null}
         </SidebarMenuButton>
       </DropdownMenuTrigger>

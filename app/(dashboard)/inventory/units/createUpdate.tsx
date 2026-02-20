@@ -3,6 +3,8 @@
 import { useEffect, useState } from "@/lib/imports";
 import DynamicForm from "@/components/DynamicForm";
 import { items } from "@/lib/api/items";
+import { buildPayload, getInitialFormValues, type FormField } from "@/lib/utils";
+import toast from "react-hot-toast";
 
 interface UnitFormProps {
   isOpen: boolean;
@@ -10,9 +12,24 @@ interface UnitFormProps {
   onSuccess?: () => void;
   id?: string | null;
   title?: string;
-  initialData?: any;
-  isEditing?: boolean;
 }
+
+const Schema: FormField[] = [
+  { 
+    name: "unit_name", 
+    label: "Unit Name", 
+    placeholder: "e.g. Pieces", 
+    required: true,
+    custom_msg: "Unit Name is required"
+  },
+  { 
+    name: "short_name", 
+    label: "Unit Short Name", 
+    placeholder: "e.g. PCS",
+    required: true,
+    custom_msg: "Unit Short Name is required"
+  }
+];
 
 export function UnitForm({ 
   isOpen, 
@@ -20,103 +37,76 @@ export function UnitForm({
   onSuccess, 
   id, 
   title, 
-  initialData,
-  isEditing = false 
 }: UnitFormProps) {
   const [createItemUnit] = items.useCreateItemUnitMutation();
   const [editItemUnit] = items.useEditItemUnitMutation();
   const [getItemUnitData] = items.useGetItemUnitByIdMutation();
 
-  const UnitSchema = [
-  { 
-    name: "name", 
-    label: "Unit Name", 
-    placeholder: "e.g. Pieces", 
-    required: true 
-  },
-  { 
-    name: "code", 
-    label: "Unit Code", 
-    placeholder: "e.g. PCS",
-    required: true
-  },
-  { 
-    name: "description", 
-    label: "Description", 
-    type: "textarea" as const,
-    placeholder: "Enter a detailed description...",
-    rows: 3
-  }
-];
+  const [initialValues, setInitialValues] = useState(() =>
+    getInitialFormValues(Schema)
+  );
 
-  const [initialValues, setInitialValues] = useState({
-    name: "",
-    code: "",
-    description: "",
-  });
-
-  /** Submit handler */
-  const handleSubmit = async (values: any, { resetForm }: any) => {
+  const handleSubmit = async (
+    values: Record<string, any>,
+    { resetForm }: any
+  ) => {
     try {
-      const processedValues = {
-        ...values,
-      };
-
-      const result = isEditing && id
-        ? await editItemUnit({ id, payLoad: processedValues }).unwrap()
-        : await createItemUnit(processedValues).unwrap();
+      const payLoad = buildPayload(Schema, values, { id });
+      const result = id
+        ? await editItemUnit({ id, ...payLoad }).unwrap()
+        : await createItemUnit(payLoad).unwrap();
 
       resetForm();
       onClose?.();
       onSuccess?.();
-
+      toast.success(id ? "Unit updated successfully!" : "Unit created successfully!");
       return result;
     } catch (error) {
-      console.error("Submit failed:", error);
+      toast.error(id ? "Failed to update unit" : "Failed to create unit");
       return error;
     }
   };
 
-  /** Load data if editing */
-  const handleGetItemUnit = async (id: any) => {
+  const handleGetMaster = async (id: string) => {
+    setInitialValues({
+      ...getInitialFormValues(Schema),
+      isLoaded: 'false',
+    });
     try {
-      const result = await getItemUnitData({ id: parseInt(id) }).unwrap();
-      if (result && typeof result === 'object' && 'data' in result) {
-        setInitialValues({
-          name: (result as any).data.name || "",
-          code: (result as any).data.code || "",
-          description: (result as any).data.description || "",
-        });
+      const result:any = await getItemUnitData({ id: parseInt(id) }).unwrap();
+      if (result?.data) {
+        const data = result.data;
+        setInitialValues(
+          getInitialFormValues(Schema, data, 'edit')
+        );
       }
     } catch (e) {
-      console.error("Fetch failed:", e);
+      console.error(e);
+      setInitialValues({
+        ...getInitialFormValues(Schema),
+        isLoaded: 'true',
+      });
     }
   };
 
-  /** Sync when opening */
   useEffect(() => {
     if (id && isOpen) {
-      handleGetItemUnit(id);
-    } else if (isOpen && !isEditing && initialData) {
-      setInitialValues(initialData);
-    } else if (isOpen && !isEditing) {
-      setInitialValues({
-        name: "",
-        code: "",
-        description: ""
-      });
+      handleGetMaster(id);
+    } else if (isOpen) {
+      setInitialValues(
+        getInitialFormValues(Schema, null, 'create')
+      );
     }
   }, [id, isOpen]);
 
   return (
     <DynamicForm
-      fields={UnitSchema}
+      fields={Schema}
       initialValues={initialValues}
       onSubmit={handleSubmit}
       onClose={onClose}
-      onSuccess={onSuccess}
       isOpen={isOpen}
-      title={title || (isEditing ? "Edit Unit" : "Create New Unit")}
+      title={title}
     />
   );
 }

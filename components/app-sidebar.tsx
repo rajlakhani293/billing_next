@@ -30,18 +30,18 @@ const data = {
           url: "/inventory/items",
         },
         {
-          title: "Categories",
+          title: "Item Categories",
           url: "/inventory/categories",
         },
         {
-          title: "Units",
+          title: "Item Units",
           url: "/inventory/units",
         },
       ],
     },
     {
       title: "Settings",
-      url: "/settings",
+      url: "/settings/taxes",
       icon: SettingIcon
     }
   ],
@@ -57,11 +57,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return data.navMain.map((item) => {
       const isChildActive = item.items?.some((subItem) => pathname === subItem.url)
       const isSelfActive = pathname === item.url
+      const isSettingsActive = item.url === "/settings/taxes" && pathname.startsWith("/settings/")
       
       return {
         ...item,
-        isActive: isSelfActive,
-        isExpanded: isSelfActive || isChildActive,
+        isActive: isSelfActive || isSettingsActive,
+        isExpanded: isSelfActive || isChildActive || isSettingsActive,
         items: item.items?.map(subItem => ({
            ...subItem,
            isActive: pathname === subItem.url

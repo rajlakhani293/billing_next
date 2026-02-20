@@ -6,7 +6,7 @@ import { items } from "@/lib/api/items";
 import { FormField, getInitialFormValues } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-interface CategoryFormProps {
+interface TaxFormProps {
   isOpen: boolean;
   onClose?: () => void;
   onSuccess?: () => void;
@@ -16,28 +16,30 @@ interface CategoryFormProps {
 
 const Schema: FormField[] = [
   { 
-    name: "category_name", 
-    label: "Category Name", 
-    placeholder: "e.g. Electronics", 
+    name: "tax_name", 
+    label: "Tax Name", 
+    placeholder: "e.g. VAT", 
     required: true 
   },
   { 
-    name: "description", 
-    label: "Description", 
-    placeholder: "Enter a description...",
+    name: "tax_value", 
+    label: "Tax Rate (%)", 
+    placeholder: "e.g. 15", 
+    required: true,
+    type: "number"
   }
 ];
 
-export function CategoryForm({ 
+export function TaxForm({ 
   isOpen, 
   onClose, 
   onSuccess, 
   id, 
   title, 
-}: CategoryFormProps) {
-  const [createItemCategory] = items.useCreateItemCategoryMutation();
-  const [editItemCategory] = items.useEditItemCategoryMutation();
-  const [getItemCategoryData] = items.useGetItemCategoryByIdMutation();
+}: TaxFormProps) {
+  const [createTax] = items.useCreateTaxMutation();
+  const [editTax] = items.useEditTaxMutation();
+  const [getTaxData] = items.useGetTaxByIdMutation();
 
   const [initialValues, setInitialValues] = useState<any>(() => getInitialFormValues(Schema));
   
@@ -46,14 +48,15 @@ export function CategoryForm({
     try {
       const processedValues = {
         ...values,
+        tax_rate: parseFloat(values.tax_rate),
       };
 
       const result: any = id
-        ? await editItemCategory({ id, payLoad: processedValues }).unwrap()
-        : await createItemCategory(processedValues).unwrap();
+        ? await editTax({ id, payLoad: processedValues }).unwrap()
+        : await createTax(processedValues).unwrap();
 
       if (result?.success) {
-        const message = id ? "Category updated successfully!" : "Category created successfully!";
+        const message = id ? "Tax updated successfully!" : "Tax created successfully!";
         toast.success(message);
         resetForm();
         onClose?.();
@@ -74,7 +77,7 @@ export function CategoryForm({
   /** Load data if editing */
   const handleGetMaster = async (id: any) => {
     try {
-      const result: any = await getItemCategoryData({ id: parseInt(id) }).unwrap();
+      const result: any = await getTaxData({ id: parseInt(id) }).unwrap();
       const data = result.data;
       if (result?.data) {
         const baseValues = getInitialFormValues(Schema, data);

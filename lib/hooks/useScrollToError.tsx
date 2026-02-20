@@ -3,7 +3,6 @@ import { useEffect, useRef } from 'react';
 export const useScrollToError = (
   errors: any,
   isSubmitting: boolean,
-  touched: any
 ) => {
   const formRef = useRef<HTMLFormElement>(null);
 

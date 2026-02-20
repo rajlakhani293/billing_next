@@ -6,7 +6,7 @@ import { items } from "@/lib/api/items";
 import { FormField, getInitialFormValues } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-interface CategoryFormProps {
+interface BrandFormProps {
   isOpen: boolean;
   onClose?: () => void;
   onSuccess?: () => void;
@@ -16,28 +16,23 @@ interface CategoryFormProps {
 
 const Schema: FormField[] = [
   { 
-    name: "category_name", 
-    label: "Category Name", 
-    placeholder: "e.g. Electronics", 
+    name: "brand_name", 
+    label: "Brand Name", 
+    placeholder: "e.g. Apple", 
     required: true 
-  },
-  { 
-    name: "description", 
-    label: "Description", 
-    placeholder: "Enter a description...",
   }
 ];
 
-export function CategoryForm({ 
+export function BrandForm({ 
   isOpen, 
   onClose, 
   onSuccess, 
   id, 
   title, 
-}: CategoryFormProps) {
-  const [createItemCategory] = items.useCreateItemCategoryMutation();
-  const [editItemCategory] = items.useEditItemCategoryMutation();
-  const [getItemCategoryData] = items.useGetItemCategoryByIdMutation();
+}: BrandFormProps) {
+  const [createBrand] = items.useCreateBrandMutation();
+  const [editBrand] = items.useEditBrandMutation();
+  const [getBrandData] = items.useGetBrandByIdMutation();
 
   const [initialValues, setInitialValues] = useState<any>(() => getInitialFormValues(Schema));
   
@@ -49,11 +44,11 @@ export function CategoryForm({
       };
 
       const result: any = id
-        ? await editItemCategory({ id, payLoad: processedValues }).unwrap()
-        : await createItemCategory(processedValues).unwrap();
+        ? await editBrand({ id, payLoad: processedValues }).unwrap()
+        : await createBrand(processedValues).unwrap();
 
       if (result?.success) {
-        const message = id ? "Category updated successfully!" : "Category created successfully!";
+        const message = id ? "Brand updated successfully!" : "Brand created successfully!";
         toast.success(message);
         resetForm();
         onClose?.();
@@ -74,7 +69,7 @@ export function CategoryForm({
   /** Load data if editing */
   const handleGetMaster = async (id: any) => {
     try {
-      const result: any = await getItemCategoryData({ id: parseInt(id) }).unwrap();
+      const result: any = await getBrandData({ id: parseInt(id) }).unwrap();
       const data = result.data;
       if (result?.data) {
         const baseValues = getInitialFormValues(Schema, data);

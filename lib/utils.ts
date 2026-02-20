@@ -91,3 +91,85 @@ export const getDateRange = (range: string) => {
   }
   return { startDate, endDate };
 };
+
+export type FormField = {
+  name: string;
+  label: string;
+  type?: "text" | "number" | "select" | "textarea" | "switch" | "date" | "hidden" | "readonly" | "radio";
+  placeholder?: string;
+  required?: boolean;
+  defaultValue?: any;
+  options?: { label: string; value: string | number }[];
+  multiple?: boolean;
+  rows?: number;
+  note?: string;
+  maxLength?: number;
+  validation?: any;
+  custom_msg?: string;
+  showCheckbox?: boolean;
+  allowClear?: boolean;
+  [key: string]: any;
+};
+
+export interface FormValuesWithLoading {
+  isLoaded?: string;
+  [key: string]: any;
+}
+
+export const getInitialFormValues = <T extends FormValuesWithLoading>(
+  schema: FormField[],
+  data?: Record<string, any> | null,
+  mode: 'create' | 'edit' = 'create'
+): T => {
+  // Create empty initial values with proper typing
+  const initialValues: Record<string, any> = {};
+
+  schema.forEach(field => {
+    if (field.defaultValue !== undefined && field.defaultValue !== null) {
+      initialValues[field.name] = field.defaultValue;
+    } else {
+      initialValues[field.name] = "";
+    }
+  });
+
+  // Cast to T after initialization
+  const typedValues = initialValues as T;
+
+  // Set loading state flag
+  if (mode === 'create') {
+    typedValues.isLoaded = "true"; // form is ready in create mode
+  } else if (mode === 'edit') {
+    typedValues.isLoaded = data ? "true" : "false"; // wait for data in edit mode
+  }
+
+  // If we have data (edit mode), merge it with the initial values
+  if (data && data !== null) {
+    for (const field of schema) {
+      if (data[field.name] !== undefined) {
+        (typedValues as any)[field.name] = data[field.name]?.toString() || "";
+      }
+    }
+    // Ensure we mark as loaded when we have data
+    typedValues.isLoaded = "true";
+  }
+
+  return typedValues;
+};
+
+export const buildPayload = (
+  schema: FormField[],
+  values: Record<string, any>,
+  meta: { moduleId?: string; entityId?: string; id?: string | null } = {}
+) => {
+  const payload: Record<string, any> = {};
+  
+  schema.forEach(field => {
+    if (values[field.name] !== undefined) {
+      payload[field.name] = values[field.name];
+    }
+  });
+
+  // Add meta fields if needed, or process specific logic
+  // For now, simply returning the values filtered by schema
+  return payload;
+};

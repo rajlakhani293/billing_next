@@ -4,10 +4,10 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import Cookies from 'js-cookie'
 import { useRouter, usePathname } from 'next/navigation'
-import { auth } from '@/lib/api/auth'
 import { setSessionData, clearSessionData } from '@/lib/redux/sessionSlice'
 import type { AppDispatch } from '@/lib/redux/store'
 import toast from 'react-hot-toast'
+import { settings } from '@/lib/api/settings'
 
 interface SessionContextType {
   isLoading: boolean;
@@ -28,7 +28,7 @@ export function useSession() {
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch<AppDispatch>()
   const [isLoading, setIsLoading] = useState(false)
-  const [getSessionData] = auth.useLazyGetSessionDataQuery()
+  const [getSessionData] = settings.useGetSessionDataMutation();
 
   const loadSessionData = async () => {
 

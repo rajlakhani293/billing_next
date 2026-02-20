@@ -3,6 +3,9 @@ import {
   FaCheckCircle,
   FaRegCircle,
   FaInfo,
+  FaChevronLeft,
+  FaChevronRight,
+  FaArrowRight,
 } from 'react-icons/fa';
 import {  MdCancel, MdOutlineInventory2, MdDelete} from 'react-icons/md';
 import { AiOutlineDashboard, AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
@@ -10,7 +13,7 @@ import { IoIosCloseCircleOutline, IoMdClose } from "react-icons/io";
 import { SiNextdotjs } from "react-icons/si";
 import { IoSettingsOutline } from "react-icons/io5";
 import { AudioWaveform, BadgeCheck, Bell, BookOpen, Bot, CheckIcon, ChevronDownIcon, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUpIcon, CircleIcon, Command, CreditCard, Folder, Forward, Frame, GalleryVerticalEnd, LogOut, MinusIcon, MoreHorizontal, PanelLeftIcon, PanelRightIcon, PieChart, Plus, Settings2, Sparkles, SquareTerminal, Trash2 } from 'lucide-react';
-import { LuArrowUpDown } from "react-icons/lu";
+import { LuArrowUpDown, LuCirclePlus } from "react-icons/lu";
 import { FiEdit, FiMoreVertical } from "react-icons/fi";
 import { BiSearchAlt2 } from "react-icons/bi";
 import { HiOutlineCalendar } from "react-icons/hi";
@@ -66,6 +69,10 @@ export const CalendarIcon = HiOutlineCalendar;
 export const EditIcon = FiEdit;
 export const RoundCloseIcon = IoIosCloseCircleOutline;
 export const LoaderIcon = RiLoader2Line;
+export const LeftIcon = FaChevronLeft;
+export const RightIcon = FaChevronRight;
+export const CirclePlusIcon = LuCirclePlus;
+export const ArrowRightIcon = FaArrowRight;
 
 export const ImagePlusIcon = ({ className = "" }: { className?: string }) => (
   <svg 

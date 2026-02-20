@@ -4,9 +4,9 @@ import { useState, useMemo } from "react";
 import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
 import { items } from "@/lib/api/items";
-import { CategoryForm } from "./createUpdate";
+import { BrandForm } from "./createUpdate";
 
-const Categories = () => {
+const Brands = () => {
   const [isAddEntityOpen, setAddEntityOpen] = useState<boolean>(false);
   const [selectedId, setSelectedId] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
@@ -25,7 +25,7 @@ const Categories = () => {
     dateFilters,
     itemsPerPage,
   } = useTableData({
-    getMaster: items.useGetItemCategoriesDataMutation,
+    getMaster: items.useGetBrandsDataMutation,
     itemsPerPage: 20,
     extraOptions: { refreshTrigger },
   });
@@ -53,12 +53,8 @@ const Categories = () => {
   const columns = useMemo(
     () => [
       {
-        key: "category_name",
-        title: "Category Name",
-      },
-      {
-        key: "description",
-        title: "Description",
+        key: "brand_name",
+        title: "Brand Name",
       }
     ],
     [currentPage, itemsPerPage]
@@ -68,8 +64,8 @@ const Categories = () => {
     <>
       <div className="p-4">
         <DynamicTable
-          tableTitle="Item Categories"
-          title="Add Item Category"
+          tableTitle="Brands"
+          title="Add Brand"
           showSearch={true}
           searchTerm={searchTerm}
           showDateRange={true}
@@ -92,15 +88,15 @@ const Categories = () => {
         />
       </div>
 
-      <CategoryForm
+      <BrandForm
         isOpen={isAddEntityOpen}
         onClose={handleClose}
         onSuccess={handleSuccess}
         id={selectedId?.id}
-        title={selectedId ? `Edit Item Category` : `Add Item Category`}
+        title={selectedId ? `Edit Brand` : `Add Brand`}
       />
     </>
   );
 };
 
-export default Categories;
+export default Brands;

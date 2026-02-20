@@ -5,11 +5,10 @@ import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
 import { items } from "@/lib/api/items";
 import { UnitForm } from "./createUpdate";
-import { EditIcon } from "@/components/AppIcon";
 
 const Units = () => {
   const [isAddEntityOpen, setAddEntityOpen] = useState<boolean>(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [selectedId, setSelectedId] = useState<any>(null);
   const {
     orders,
     totalItems,
@@ -30,29 +29,29 @@ const Units = () => {
   });
 
   const handleCreateItem = () => {
-    setEditingItem(null);
+    setSelectedId(null);
     setAddEntityOpen(true);
   };
 
   const handleEditItem = (item: any) => {
-    setEditingItem(item);
+    setSelectedId(item);
     setAddEntityOpen(true);
   };
 
   const handleClose = () => {
     setAddEntityOpen(false);
-    setEditingItem(null);
+    setSelectedId(null);
   };
 
   const columns = useMemo(
     () => [
       {
-        key: "name",
+        key: "unit_name",
         title: "Unit Name",
       },
       {
         key: "short_name",
-        title: "Short Name",
+        title: "Unit Short Name",
       }
     ],
     [currentPage, itemsPerPage]
@@ -62,8 +61,8 @@ const Units = () => {
     <>
       <div className="p-4">
         <DynamicTable
-          tableTitle="Units"
-          title="Add Unit"
+          tableTitle="Item Units"
+          title="Add Item Unit"
           showSearch={true}
           searchTerm={searchTerm}
           showDateRange={true}
@@ -90,12 +89,11 @@ const Units = () => {
         isOpen={isAddEntityOpen}
         onClose={handleClose}
         onSuccess={() => {
-          console.log("Form submitted successfully");
+          setAddEntityOpen(false);
+          setSelectedId(null);
         }}
-        id={editingItem?.id}
-        initialData={editingItem}
-        isEditing={!!editingItem}
-        title={editingItem ? "Edit Unit" : "Create New Unit"}
+        id={selectedId?.id}
+        title={selectedId ? `Edit Item Unit` : `Add Item Unit`}
       />
     </>
   );
