@@ -433,13 +433,13 @@ const DynamicTable = ({
           <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             {showSearch && (
               <div className="relative w-full sm:max-w-xs">
-                <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <UniFieldInput
                   type="text"
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => onChange("search", e.target.value)}
                   className="w-full pl-9 pr-9 h-9"
+                  prefix={<SearchIcon className="h-4 w-4" />}
                 />
                 {searchTerm && (
                   <button
@@ -467,7 +467,7 @@ const DynamicTable = ({
                     </div>
                     {selectedDateRange !== "FY 25-26" ? (
                       <div
-                        className="h-4 w-4 text-muted-foreground hover:text-destructive cursor-pointer flex items-center justify-center"
+                        className="h-4 w-4 bg-white text-muted-foreground hover:text-destructive cursor-pointer flex items-center justify-center"
                         onClick={(e) => {
                           e.stopPropagation();
                           onChange("dateRange", "FY 25-26");
@@ -625,7 +625,7 @@ const DynamicTable = ({
       {/* Table Container */}
       <div className="w-full overflow-hidden border rounded-lg">
         <div className={`relative ${data?.length > 0 ? "max-h-[calc(100vh-300px)] overflow-y-auto" : "h-[calc(100vh-300px)]"}`}>
-          <Table>
+          <Table className={cn(data?.length === 0 && "h-full")}>
             <TableHeader className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-3xl">
               <TableRow className="hover:bg-muted/90 border-b">
                 <TableHead className="w-16 text-center">
@@ -681,7 +681,7 @@ const DynamicTable = ({
                 )}
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className={cn(data?.length === 0 && "h-full")}>
               {isLoading ? (
                 <TableRow>
                   <TableCell
@@ -798,10 +798,10 @@ const DynamicTable = ({
                   );
                 })
               ) : (
-                <TableRow>
+                <TableRow className="h-full">
                   <TableCell
                     colSpan={columns.length + (hideActions ? 0 : 1) + 1}
-                    className="h-24 text-center"
+                    className="h-full text-center align-middle"
                   >
                     No Data available
                   </TableCell>

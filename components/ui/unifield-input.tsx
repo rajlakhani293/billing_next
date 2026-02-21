@@ -72,11 +72,10 @@ export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputPro
               ref={ref}
               id={inputId}
               className={cn(
-                "h-10 border-2", // Set height to 14 (56px in Tailwind)
+                "h-10 border-2 bg-white",
                 error && touched && "border-red-500 focus:border-red-500 focus:ring-red-500",
                 prefix && "pl-12",
                 suffix && "pr-12",
-                // Hide number input spin buttons
                 props.type === 'number' && "[&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none",
                 className
               )}

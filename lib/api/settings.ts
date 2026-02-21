@@ -4,6 +4,22 @@ import { createMutation, deleteMutation, getMutation, postMutation, putMutation}
 
 const endpointsConfig = {
   getSessionData: { query: () => getMutation("session-data") },
+
+  // Taxes
+  getTaxesDropdown: { query: () => getMutation("taxes/dropdown-list") },
+  getTaxesData: { query: postMutation("taxes/get-transactions") },
+  createTax: { query: createMutation("taxes/") },
+  editTax: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`taxes/${id}`, payLoad) },
+  deleteTax: { query: deleteMutation("taxes/delete") },
+  getTaxById: { query: ({ id }: { id: number }) => getMutation(`taxes/${id}`) },
+
+  // Brand
+  getBrandsDropdown: { query: () => getMutation("brands/dropdown-list") },
+  getBrandsData: { query: postMutation("brands/get-transactions") },
+  createBrand: { query: createMutation("brands/") },
+  editBrand: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`brands/${id}`, payLoad) },
+  deleteBrand: { query: deleteMutation("brands/delete") },
+  getBrandById: { query: ({ id }: { id: number }) => getMutation(`brands/${id}`) },
   
 }
 

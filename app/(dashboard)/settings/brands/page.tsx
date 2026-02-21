@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
-import { items } from "@/lib/api/items";
+import { settings } from "@/lib/api/settings";
 import { BrandForm } from "./createUpdate";
 
 const Brands = () => {
@@ -25,7 +25,7 @@ const Brands = () => {
     dateFilters,
     itemsPerPage,
   } = useTableData({
-    getMaster: items.useGetBrandsDataMutation,
+    getMaster: settings.useGetBrandsDataMutation,
     itemsPerPage: 20,
     extraOptions: { refreshTrigger },
   });

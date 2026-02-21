@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
 import { TaxForm } from "./createUpdate";
-import { items } from "@/lib/api/items";
+import { settings } from "@/lib/api/settings";
 
 const Taxes = () => {
   const [isAddEntityOpen, setAddEntityOpen] = useState<boolean>(false);
@@ -25,7 +25,7 @@ const Taxes = () => {
     dateFilters,
     itemsPerPage,
   } = useTableData({
-    getMaster: items.useGetTaxesDataMutation,
+    getMaster: settings.useGetTaxesDataMutation,
     itemsPerPage: 20,
     extraOptions: { refreshTrigger },
   });

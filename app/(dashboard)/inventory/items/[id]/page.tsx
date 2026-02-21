@@ -14,6 +14,8 @@ import { CategoryForm } from "@/app/(dashboard)/inventory/categories/createUpdat
 import { UnitForm } from "@/app/(dashboard)/inventory/units/createUpdate";
 import { TaxForm } from "@/app/(dashboard)/settings/taxes/createUpdate";
 import { BrandForm } from "@/app/(dashboard)/settings/brands/createUpdate";
+import { settings } from "@/lib/api/settings";
+import { MultipleImageUpload } from "@/components/ui/multiple-image-upload";
 
 export default function ItemPage() {
   const router = useRouter();
@@ -26,8 +28,8 @@ export default function ItemPage() {
   const [getItemData] = items.useGetItemByIdMutation();
   const [getCategories] = items.useGetItemCategoriesDropdownMutation();
   const [getUnits] = items.useGetItemUnitsDropdownMutation();
-  const [getTaxes] = items.useGetTaxesDropdownMutation();
-  const [getBrands] = items.useGetBrandsDropdownMutation();
+  const [getTaxes] = settings.useGetTaxesDropdownMutation();
+  const [getBrands] = settings.useGetBrandsDropdownMutation();
 
   const [categories, setCategories] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
@@ -140,17 +142,10 @@ export default function ItemPage() {
       placeholder: "Enter a detailed description...",
       rows: 3
     },
-    {
-      name: "item_image",
-      label: "Item Image",
-      type: "text",
-      placeholder: "Choose image file"
-    },
   ];
 
   const [formData, setFormData] = useState<any>(() => getInitialFormValues(Schema));
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isDragging, setIsDragging] = useState(false);
 
   const validateField = (name: string, value: any) => {
     const field = Schema.find(f => f.name === name);
@@ -174,35 +169,6 @@ export default function ItemPage() {
     setErrors((prev: any) => ({ ...prev, [name]: error }));
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const files = e.dataTransfer.files;
-    if (files && files[0]) {
-      const file = files[0];
-      if (file.type.startsWith('image/')) {
-        handleChange('item_image', file);
-      }
-    }
-  };
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleChange('item_image', file);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -423,12 +389,12 @@ export default function ItemPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Main Column - Left (2/3) */}
               <div className="lg:col-span-2 space-y-6">
-                {/* General Information */}
+                {/* Basic Details */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">General Information</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Details</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Schema.filter(field => ['item_name', 'category_id', 'brand'].includes(field.name)).map((field) => (
-                      <div key={field.name} className={field.name === 'item_name' ? "md:col-span-2" : ""}>
+                    {Schema.filter(field => ['item_name', 'category_id', 'brand', 'barcode'].includes(field.name)).map((field) => (
+                      <div key={field.name}>
                         {field.type === "select" ? (
                           field.name === 'category_id' ? (
                             <SelectWithAddButton field={field} formType="category" />
@@ -470,11 +436,38 @@ export default function ItemPage() {
                   </div>
                 </div>
 
-                {/* Technical & Inventory Details */}
+                {/* Pricing & Tax */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Technical & Inventory</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Schema.filter(field => ['barcode', 'hsn_code', 'primary_unit_id', 'item_weight'].includes(field.name)).map((field) => (
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing & Tax</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {Schema.filter(field => ['purchase_price', 'selling_price', 'tax_rate'].includes(field.name)).map((field) => (
+                      <div key={field.name}>
+                        {field.name === 'tax_rate' ? (
+                          <SelectWithAddButton field={field} formType="tax" />
+                        ) : (
+                          <UniFieldInput
+                            label={field.label}
+                            type={field.type}
+                            placeholder={field.placeholder}
+                            value={formData[field.name] || ''}
+                            onChange={(e) => handleChange(field.name, e.target.value)}
+                            required={field.required}
+                            min={field.min}
+                            step={field.step}
+                            error={errors[field.name]}
+                            touched={!!formData[field.name]}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Inventory & Compliance */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Inventory & Compliance</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {Schema.filter(field => ['hsn_code', 'primary_unit_id', 'item_weight'].includes(field.name)).map((field) => (
                       <div key={field.name}>
                         {field.name === 'primary_unit_id' ? (
                           <SelectWithAddButton field={field} formType="unit" />
@@ -523,104 +516,24 @@ export default function ItemPage() {
 
               {/* Sidebar - Right (1/3) */}
               <div className="space-y-6">
-                {/* Image Upload */}
+                {/* Images */}
                 <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Media</h3>
-                  {Schema.filter(field => field.name === 'item_image').map((field) => (
-                    <div key={field.name} className="space-y-2">
-                      <div className={`w-full border-2 border-dashed rounded-xl p-4 text-center transition-all ${
-                        isDragging 
-                          ? 'border-blue-500 bg-blue-50 ring-4 ring-blue-50' 
-                          : 'border-gray-200 hover:border-gray-300 bg-gray-50/50'
-                      }`}>
-                        <div 
-                          className="flex flex-col items-center justify-center space-y-3 cursor-pointer py-4"
-                          onDragOver={handleDragOver}
-                          onDragLeave={handleDragLeave}
-                          onDrop={handleDrop}
-                          onClick={() => document.getElementById('item_image_input')?.click()}
-                        >
-                          {formData.item_image ? (
-                            <div className="flex flex-col items-center space-y-3">
-                              <div className="relative group">
-                                {formData.item_image instanceof Blob ? (
-                                  <img 
-                                    src={URL.createObjectURL(formData.item_image)} 
-                                    alt="Item preview" 
-                                    className="h-32 w-32 object-cover rounded-lg shadow-md ring-2 ring-white"
-                                  />
-                                ) : (
-                                  <img 
-                                    src={formData.item_image} 
-                                    alt="Item preview" 
-                                    className="h-32 w-32 object-cover rounded-lg shadow-md ring-2 ring-white"
-                                  />
-                                )}
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                                  <p className="text-xs text-white font-medium">Change Image</p>
-                                </div>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-xs font-medium text-gray-700 truncate max-w-[150px]">
-                                  {formData.item_image instanceof File ? formData.item_image.name : 'Current Image'}
-                                </p>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col items-center space-y-3">
-                              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-100">
-                                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                              <div className="space-y-1">
-                                <p className="text-xs font-semibold text-gray-900">Upload Image</p>
-                                <p className="text-[10px] text-gray-500">Drag & drop or click</p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <input
-                          id="item_image_input"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageSelect}
-                          className="hidden"
-                        />
-                      </div>
-                      {errors[field.name] && (
-                        <p className="text-xs text-red-500 mt-1">{errors[field.name]}</p>
-                      )}
-                    </div>
-                  ))}
+                  <MultipleImageUpload
+                    frontImages={formData.front_images || []}
+                    rearImages={formData.rear_images || []}
+                    otherImages={formData.other_images || []}
+                    onFrontImagesChange={(files: File[]) => handleChange('front_images', files)}
+                    onRearImagesChange={(files: File[]) => handleChange('rear_images', files)}
+                    onOtherImagesChange={(files: File[]) => handleChange('other_images', files)}
+                    frontError={errors.front_images}
+                    rearError={errors.rear_images}
+                    otherError={errors.other_images}
+                    maxOtherImages={15}
+                    maxSize={5}
+                  />
                 </div>
 
-                {/* Pricing & Tax */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing & Tax</h3>
-                  <div className="space-y-4">
-                    {Schema.filter(field => ['purchase_price', 'selling_price', 'tax_rate'].includes(field.name)).map((field) => (
-                      <div key={field.name}>
-                        {field.name === 'tax_rate' ? (
-                          <SelectWithAddButton field={field} formType="tax" />
-                        ) : (
-                          <UniFieldInput
-                            label={field.label}
-                            type={field.type}
-                            placeholder={field.placeholder}
-                            value={formData[field.name] || ''}
-                            onChange={(e) => handleChange(field.name, e.target.value)}
-                            required={field.required}
-                            min={field.min}
-                            step={field.step}
-                            error={errors[field.name]}
-                            touched={!!formData[field.name]}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                
               </div>
             </div>
 

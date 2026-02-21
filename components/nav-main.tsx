@@ -25,11 +25,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import Link from "next/link"
 
 export function NavMain({
@@ -71,7 +66,7 @@ export function NavMain({
                   asChild
                   tooltip={item.title}
                   isActive={item.isActive}
-                  className="data-[active=true]:bg-blue-50 hover:data-[active=true]:bg-blue-50"
+                  className="data-[active=true]:bg-blue-100 hover:data-[active=true]:bg-blue-50"
                 >
                   <Link href={item.url}>
                     {item.icon && <item.icon className="w-5! h-5!" />}
@@ -94,7 +89,7 @@ export function NavMain({
                   <SidebarMenuButton 
                     tooltip={item.title}
                     isActive={item.isActive}
-                    className="data-[active=true]:bg-blue-100/50 hover:data-[active=true]:bg-blue-50 cursor-pointer"
+                    className="data-[active=true]:bg-blue-100 hover:data-[active=true]:bg-blue-50 cursor-pointer"
                   >
                     {item.icon && <item.icon className="w-5! h-5!" />}
                     <span>{item.title}</span>
@@ -108,7 +103,7 @@ export function NavMain({
                         <SidebarMenuSubButton 
                           asChild 
                           isActive={subItem.isActive}
-                          className="data-[active=true]:bg-blue-100/50 hover:data-[active=true]:bg-blue-50"
+                          className="data-[active=true]:bg-blue-100 hover:data-[active=true]:bg-blue-50"
                         >
                           <Link href={subItem.url}>
                             <span>{subItem.title}</span>
@@ -186,7 +181,7 @@ function NavCollapsedItem({
             isActive={item.isActive}
             onMouseEnter={handleSingleItemMouseEnter}
             onMouseLeave={handleSingleItemMouseLeave}
-            className="data-[active=true]:bg-blue-100/50 hover:data-[active=true]:bg-blue-50 cursor-pointer"
+            className="data-[active=true]:bg-blue-100 hover:data-[active=true]:bg-blue-50 cursor-pointer"
           >
             <Link href={item.url} className="flex items-center justify-center w-full">
               {item.icon && <item.icon className="w-5! h-5!" />}
@@ -220,7 +215,7 @@ function NavCollapsedItem({
           isActive={item.isActive || item.isExpanded}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className="data-[active=true]:bg-blue-100/50 hover:data-[active=true]:bg-blue-50 cursor-pointer"
+          className="data-[active=true]:bg-blue-100 hover:data-[active=true]:bg-blue-50 cursor-pointer"
         >
           {item.icon && <item.icon className="w-5! h-5!" />}
           {item.items?.length ? <ChevronRightIcon className="ml-auto transition-transform duration-200" /> : null}

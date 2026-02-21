@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "@/lib/imports";
 import DynamicForm from "@/components/DynamicForm";
-import { items } from "@/lib/api/items";
+import { settings } from "@/lib/api/settings";
 import { FormField, getInitialFormValues } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -37,9 +37,9 @@ export function TaxForm({
   id, 
   title, 
 }: TaxFormProps) {
-  const [createTax] = items.useCreateTaxMutation();
-  const [editTax] = items.useEditTaxMutation();
-  const [getTaxData] = items.useGetTaxByIdMutation();
+  const [createTax] = settings.useCreateTaxMutation();
+  const [editTax] = settings.useEditTaxMutation();
+  const [getTaxData] = settings.useGetTaxByIdMutation();
 
   const [initialValues, setInitialValues] = useState<any>(() => getInitialFormValues(Schema));
   

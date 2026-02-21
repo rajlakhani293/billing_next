@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "@/lib/imports";
+import { useState, useEffect, useRef } from "@/lib/imports";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,7 +59,7 @@ const DynamicForm = <T extends Record<string, any>>({
   onSuccess,
   title = "Form Title",
   note,
-  isOpen = true,
+  isOpen = false,
   children,
   validationSchema,
   extra,
@@ -75,11 +75,25 @@ const DynamicForm = <T extends Record<string, any>>({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const drawerContentRef = useRef<HTMLDivElement>(null);
 
   // Reset isSubmitting when drawer closes
   useEffect(() => {
     if (!isOpen) {
       setIsSubmitting(false);
+    }
+  }, [isOpen]);
+
+  // Manage focus to prevent aria-hidden issues
+  useEffect(() => {
+    if (isOpen && drawerContentRef.current) {
+      // Small delay to ensure drawer is fully open
+      const timeoutId = setTimeout(() => {
+        // Move focus to the drawer content to prevent aria-hidden conflicts
+        drawerContentRef.current?.focus();
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [isOpen]);
 
@@ -165,24 +179,34 @@ const DynamicForm = <T extends Record<string, any>>({
 
   const handleClose = () => {
     if (!isSubmitting) {
-      // Add a small delay to prevent aria-hidden focus issues
+      // Add a delay to prevent aria-hidden focus issues during drawer close animation
       setTimeout(() => {
         setFormData(initialValues);
         setErrors({});
         setTouched({});
         onClose?.();
-      }, 0);
+      }, 100); // Increased delay to ensure drawer close animation completes
     }
   };
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && handleClose()} direction="right">
-      <DrawerContent className={`h-full ${getWidthClass(formWidth)} flex flex-col`}>
+      <DrawerContent 
+        ref={drawerContentRef}
+        className={`h-full ${getWidthClass(formWidth)} flex flex-col`}
+        tabIndex={-1}
+      >
         <DrawerHeader className="border-b shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <DrawerTitle>{title}</DrawerTitle>
-              {note && <DrawerDescription>{note}</DrawerDescription>}
+              {note ? (
+                <DrawerDescription>{note}</DrawerDescription>
+              ) : (
+                <DrawerDescription className="sr-only">
+                  Form dialog for {title || 'form'}
+                </DrawerDescription>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {extra && extra({ formData, handleChange, errors, touched })}

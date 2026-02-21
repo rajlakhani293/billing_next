@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "@/lib/imports";
 import DynamicForm from "@/components/DynamicForm";
-import { items } from "@/lib/api/items";
+import { settings } from "@/lib/api/settings";
 import { FormField, getInitialFormValues } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -30,9 +30,9 @@ export function BrandForm({
   id, 
   title, 
 }: BrandFormProps) {
-  const [createBrand] = items.useCreateBrandMutation();
-  const [editBrand] = items.useEditBrandMutation();
-  const [getBrandData] = items.useGetBrandByIdMutation();
+  const [createBrand] = settings.useCreateBrandMutation();
+  const [editBrand] = settings.useEditBrandMutation();
+  const [getBrandData] = settings.useGetBrandByIdMutation();
 
   const [initialValues, setInitialValues] = useState<any>(() => getInitialFormValues(Schema));
   
