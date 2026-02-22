@@ -1,14 +1,31 @@
 "use client"
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "./button";
-import { PlusIcon, EditIcon, DeleteIcon, RoundCloseIcon, ChevronLeftIcon, ChevronRightIcon } from "../AppIcon";
-import { motion, AnimatePresence } from "framer-motion";
+import { PlusIcon, EditIcon, DeleteIcon, ImageIcon, MutipleImageIcon, EyeIcon, BadgeCheckIcon } from "../AppIcon";
+import CustomPopup from "./custom-popup";
+import { DialogClose } from "./dialog";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+  type CarouselApi,
+} from "./carousel";
 
 interface ImageFile {
   id: string;
   file: File;
   preview: string;
+  isPrimary?: boolean;
+}
+
+interface PreviewModalState {
+  isOpen: boolean;
+  images: ImageFile[];
+  currentIndex: number;
+  type: 'front' | 'rear' | 'other';
 }
 
 interface MultipleImageUploadProps {
@@ -22,8 +39,6 @@ interface MultipleImageUploadProps {
   rearError?: string;
   otherError?: string;
   className?: string;
-  maxOtherImages?: number;
-  maxSize?: number; // in MB
   accept?: string;
 }
 
@@ -38,8 +53,6 @@ export function MultipleImageUpload({
   rearError,
   otherError,
   className = "",
-  maxOtherImages = 15,
-  maxSize = 5,
   accept = "image/*"
 }: MultipleImageUploadProps) {
   const [frontImagesState, setFrontImagesState] = useState<ImageFile[]>(() =>
@@ -65,16 +78,32 @@ export function MultipleImageUpload({
       preview: URL.createObjectURL(file)
     }))
   );
+  const maxSize = 5;
+  const maxOtherImages = 15;
 
   const [selectedOtherImageIndex, setSelectedOtherImageIndex] = useState(0);
+  const [previewModal, setPreviewModal] = useState<PreviewModalState>({
+    isOpen: false,
+    images: [],
+    currentIndex: 0,
+    type: 'other'
+  });
 
   const [isDraggingFront, setIsDraggingFront] = useState(false);
   const [isDraggingRear, setIsDraggingRear] = useState(false);
   const [isDraggingOther, setIsDraggingOther] = useState(false);
+  const [mainApi, setMainApi] = useState<CarouselApi>();
+  const [previewApi, setPreviewApi] = useState<CarouselApi>();
 
   const frontInputRef = useRef<HTMLInputElement>(null);
   const rearInputRef = useRef<HTMLInputElement>(null);
   const otherInputRef = useRef<HTMLInputElement>(null);
+
+  const checkHasPrimary = () => {
+    return frontImagesState.some(img => img.isPrimary) || 
+           rearImagesState.some(img => img.isPrimary) || 
+           otherImagesState.some(img => img.isPrimary);
+  };
 
   // Front Image Handlers
   const handleDragOverFront = (e: React.DragEvent) => {
@@ -117,16 +146,62 @@ export function MultipleImageUpload({
     });
 
     if (validFiles.length > 0) {
-      const newImages: ImageFile[] = validFiles.map(file => ({
+      const hasPrimary = checkHasPrimary();
+      const newImages: ImageFile[] = validFiles.map((file, idx) => ({
         id: Math.random().toString(36).substr(2, 9),
         file,
-        preview: URL.createObjectURL(file)
+        preview: URL.createObjectURL(file),
+        isPrimary: !hasPrimary && idx === 0
       }));
 
       setFrontImagesState(newImages);
       onFrontImagesChange(newImages.map(img => img.file));
+      
+      // Update preview modal if it's open for front image
+      if (previewModal.isOpen && previewModal.type === 'front') {
+        setPreviewModal(prev => ({
+          ...prev,
+          images: newImages,
+          currentIndex: 0
+        }));
+      }
     }
   };
+
+  useEffect(() => {
+    if (!mainApi) return;
+    if (mainApi.selectedScrollSnap() !== selectedOtherImageIndex) {
+      mainApi.scrollTo(selectedOtherImageIndex);
+    }
+  }, [mainApi, selectedOtherImageIndex]);
+
+  useEffect(() => {
+    if (!mainApi) return;
+    const onSelect = () => {
+      setSelectedOtherImageIndex(mainApi.selectedScrollSnap());
+    };
+    mainApi.on("select", onSelect);
+    return () => {
+      mainApi.off("select", onSelect);
+    };
+  }, [mainApi]);
+
+  useEffect(() => {
+    if (!previewApi) return;
+    if (previewApi.selectedScrollSnap() !== previewModal.currentIndex) {
+      previewApi.scrollTo(previewModal.currentIndex);
+    }
+  }, [previewApi, previewModal.currentIndex]);
+
+  useEffect(() => {
+    if (!previewApi) return;
+    previewApi.on("select", () => {
+      setPreviewModal(prev => ({
+        ...prev,
+        currentIndex: previewApi.selectedScrollSnap()
+      }));
+    });
+  }, [previewApi]);
 
   const handleClickFront = (e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -185,14 +260,25 @@ export function MultipleImageUpload({
     });
 
     if (validFiles.length > 0) {
-      const newImages: ImageFile[] = validFiles.map(file => ({
+      const hasPrimary = checkHasPrimary();
+      const newImages: ImageFile[] = validFiles.map((file, idx) => ({
         id: Math.random().toString(36).substr(2, 9),
         file,
-        preview: URL.createObjectURL(file)
+        preview: URL.createObjectURL(file),
+        isPrimary: !hasPrimary && idx === 0
       }));
 
       setRearImagesState(newImages);
       onRearImagesChange(newImages.map(img => img.file));
+
+      // Update preview modal if it's open for rear image
+      if (previewModal.isOpen && previewModal.type === 'rear') {
+        setPreviewModal(prev => ({
+          ...prev,
+          images: newImages,
+          currentIndex: 0
+        }));
+      }
     }
   };
 
@@ -269,10 +355,14 @@ export function MultipleImageUpload({
         return true;
       });
 
-      const newImages: ImageFile[] = validFiles.map(file => ({
+      const hasPrimary = checkHasPrimary() || 
+        availableSlots.some(s => s.type === 'front' || s.type === 'rear');
+
+      const newImages: ImageFile[] = validFiles.map((file, idx) => ({
         id: Math.random().toString(36).substr(2, 9),
         file,
-        preview: URL.createObjectURL(file)
+        preview: URL.createObjectURL(file),
+        isPrimary: !hasPrimary && idx === 0
       }));
 
       const updatedImages = [...otherImagesState, ...newImages];
@@ -281,16 +371,19 @@ export function MultipleImageUpload({
     }
 
     // Process Front and Rear assignments
-    availableSlots.forEach(slot => {
+    availableSlots.forEach((slot, idx) => {
       if (slot.file.size > maxSize * 1024 * 1024) {
         alert(`File "${slot.file.name}" is too large. Max size is ${maxSize}MB`);
         return;
       }
 
+      const hasPrimaryAcross = checkHasPrimary();
+
       const newImage: ImageFile = {
         id: Math.random().toString(36).substr(2, 9),
         file: slot.file,
-        preview: URL.createObjectURL(slot.file)
+        preview: URL.createObjectURL(slot.file),
+        isPrimary: !hasPrimaryAcross && idx === 0
       };
 
       if (slot.type === 'front') {
@@ -309,17 +402,6 @@ export function MultipleImageUpload({
     otherInputRef.current?.click();
   };
 
-  const clearOtherImages = (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-    setOtherImagesState([]);
-    onOtherImagesChange([]);
-    setSelectedOtherImageIndex(0);
-    if (otherInputRef.current) {
-      otherInputRef.current.value = '';
-    }
-  };
-
   const handleRemoveOtherImage = (id: string, index: number, e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
@@ -332,28 +414,114 @@ export function MultipleImageUpload({
     }
   };
 
-  const handleReorderOther = (fromIndex: number, toIndex: number) => {
-    const reorderedImages = [...otherImagesState];
-    const [movedImage] = reorderedImages.splice(fromIndex, 1);
-    reorderedImages.splice(toIndex, 0, movedImage);
+  const openPreviewModal = (images: ImageFile[], currentIndex: number, type: 'front' | 'rear' | 'other') => {
+    setPreviewModal({
+      isOpen: true,
+      images,
+      currentIndex,
+      type
+    });
+  };
 
-    setOtherImagesState(reorderedImages);
-    onOtherImagesChange(reorderedImages.map(img => img.file));
+  const closePreviewModal = () => {
+    setPreviewModal({
+      isOpen: false,
+      images: [],
+      currentIndex: 0,
+      type: 'other'
+    });
+  };
+
+  const handleModalImageDelete = () => {
+    const { images, currentIndex, type } = previewModal;
+    const imageToDelete = images[currentIndex];
+    
+    if (type === 'front') {
+      handleRemoveFrontImage();
+    } else if (type === 'rear') {
+      handleRemoveRearImage();
+    } else if (type === 'other') {
+      handleRemoveOtherImage(imageToDelete.id, currentIndex);
+    }
+    
+    if (images.length === 1) {
+      closePreviewModal();
+    } else {
+      const newImages = images.filter((_, index) => index !== currentIndex);
+      const newIndex = Math.min(currentIndex, newImages.length - 1);
+      setPreviewModal(prev => ({
+        ...prev,
+        images: newImages,
+        currentIndex: Math.max(0, newIndex)
+      }));
+    }
+  };
+
+  const handleSetAsPrimary = (type?: 'front' | 'rear' | 'other', id?: string) => {
+    const targetType = type || previewModal.type;
+    const targetId = id || (previewModal.images[previewModal.currentIndex]?.id);
+
+    const newFront = frontImagesState.map(img => ({ ...img, isPrimary: targetType === 'front' }));
+    const newRear = rearImagesState.map(img => ({ ...img, isPrimary: targetType === 'rear' }));
+    
+    let newOther = otherImagesState.map(img => ({ 
+      ...img, 
+      isPrimary: targetType === 'other' && img.id === targetId 
+    }));
+
+    // If it's an "other" image being set as primary, move it to the front
+    if (targetType === 'other' && targetId) {
+      const primaryImgIndex = newOther.findIndex(img => img.id === targetId);
+      if (primaryImgIndex !== -1) {
+        const [primaryImg] = newOther.splice(primaryImgIndex, 1);
+        newOther = [primaryImg, ...newOther];
+        setSelectedOtherImageIndex(0);
+      }
+    }
+
+    setFrontImagesState(newFront);
+    setRearImagesState(newRear);
+    setOtherImagesState(newOther);
+    
+    // Trigger callbacks to sync with parent
+    onFrontImagesChange(newFront.map(img => img.file));
+    onRearImagesChange(newRear.map(img => img.file));
+    onOtherImagesChange(newOther.map(img => img.file));
+    
+    if (previewModal.isOpen) {
+      setPreviewModal(prev => {
+        let newModalImages = [...prev.images];
+        if (prev.type === 'other' && targetType === 'other') {
+          newModalImages = newOther;
+        } else {
+          newModalImages = newModalImages.map(img => ({
+            ...img,
+            isPrimary: (prev.type === 'front' && targetType === 'front') || 
+                       (prev.type === 'rear' && targetType === 'rear') ||
+                       (prev.type === 'other' && targetType === 'other' && img.id === targetId)
+          }));
+        }
+
+        return { 
+          ...prev, 
+          images: newModalImages,
+          currentIndex: (prev.type === targetType) ? 0 : prev.currentIndex
+        };
+      });
+    }
   };
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      <h3 className="text-lg font-semibold text-gray-900">Media</h3>
-
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className={`${className}`}>
+       {/* <h3 className="text-base font-semibold text-gray-900">Item Images</h3> */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 h-[250px]">
         {/* First Column: Front and Rear stacked */}
-        <div className="space-y-4">
+        <div className="h-full">
           {/* Front View Box */}
-          <div className="space-y-2">
+          <div className="h-1/2 p-1">
             {frontImagesState.length === 0 ? (
               <div
-                className={`w-full border-2 border-dashed rounded-xl p-4 text-center transition-all cursor-pointer bg-white ${isDraggingFront
+                className={`w-full h-full border-2 border-dashed rounded-xl text-center transition-all cursor-pointer bg-white flex flex-col items-center justify-center ${isDraggingFront
                     ? 'border-blue-500 bg-blue-50 ring-4 ring-blue-50'
                     : 'border-gray-300 hover:border-gray-400'
                   }`}
@@ -362,42 +530,63 @@ export function MultipleImageUpload({
                 onDrop={handleDropFront}
                 onClick={handleClickFront}
               >
-                <div className="flex flex-col items-center space-y-2 py-2">
+                <div className="flex flex-col items-center space-y-2 py-2 hover:scale-110 transition-transform">
                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-200">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                    <ImageIcon/>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-gray-900">Upload Front Image</p>
+                    <p className="text-sm font-semibold text-gray-900">Upload Image</p>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="relative group">
+              <div 
+                className="relative group h-[calc(125px-8px)] overflow-hidden cursor-pointer"
+                onClick={() => openPreviewModal(frontImagesState, 0, 'front')}
+              >
                 <img
                   src={frontImagesState[0].preview}
                   alt="Front view preview"
-                  className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                  className="h-full w-full object-contain rounded-lg border border-gray-200 bg-gray-50"
                 />
-                <div className="absolute border-2 border-gray-200 inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                {frontImagesState[0].isPrimary && (
+                  <div className="absolute top-0 right-0 bg-blue-600 text-white p-1 rounded-tr-lg rounded-bl-lg shadow-sm z-10">
+                    <BadgeCheckIcon className="size-3" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
                   <Button
                     type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={handleClickFront}
-                    className="h-8 w-8 p-0"
+                    variant={frontImagesState[0].isPrimary ? "default" : "secondary"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSetAsPrimary('front');
+                    }}
+                    className={`size-6 p-0 rounded-sm ${frontImagesState[0].isPrimary ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
                   >
-                    <EditIcon className="w-4 h-4" />
+                    <BadgeCheckIcon className="size-4" />
                   </Button>
                   <Button
                     type="button"
-                    size="sm"
-                    variant="destructive"
-                    onClick={handleRemoveFrontImage}
-                    className="h-8 w-8 p-0"
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openPreviewModal(frontImagesState, 0, 'front');
+                    }}
+                    className="size-6 p-0 rounded-sm"
                   >
-                    <DeleteIcon className="w-4 h-4" />
+                    <EyeIcon className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFrontImage(e);
+                    }}
+                    className="size-6 p-0 rounded-sm"
+                  >
+                    <DeleteIcon className="size-4" />
                   </Button>
                 </div>
               </div>
@@ -415,10 +604,10 @@ export function MultipleImageUpload({
           </div>
 
           {/* Rear View Box */}
-          <div className="space-y-2">
+          <div className="h-1/2 p-1">
             {rearImagesState.length === 0 ? (
               <div
-                className={`w-full border-2 border-dashed rounded-xl p-4 text-center transition-all cursor-pointer bg-white ${isDraggingRear
+                className={`w-full h-full border-2 border-dashed rounded-xl text-center transition-all cursor-pointer bg-white flex flex-col items-center justify-center ${isDraggingRear
                     ? 'border-blue-500 bg-blue-50 ring-4 ring-blue-50'
                     : 'border-gray-300 hover:border-gray-400'
                   }`}
@@ -427,40 +616,61 @@ export function MultipleImageUpload({
                 onDrop={handleDropRear}
                 onClick={handleClickRear}
               >
-                <div className="flex flex-col items-center space-y-2 py-2">
+                <div className="flex flex-col items-center space-y-2 py-2 hover:scale-110 transition-transform">
                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-200">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                    <ImageIcon/>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-gray-900">Upload Rear Image</p>
+                    <p className="text-sm font-semibold text-gray-900">Upload Image</p>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="relative group">
+              <div 
+                className="relative group h-[calc(125px-8px)] overflow-hidden cursor-pointer"
+                onClick={() => openPreviewModal(rearImagesState, 0, 'rear')}
+              >
                 <img
                   src={rearImagesState[0].preview}
                   alt="Rear view preview"
-                  className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                  className="w-full h-full object-contain rounded-lg border border-gray-200 bg-gray-50"
                 />
+                {rearImagesState[0].isPrimary && (
+                  <div className="absolute top-0 right-0 bg-blue-600 text-white p-1 rounded-tr-lg rounded-bl-lg shadow-sm z-10">
+                    <BadgeCheckIcon className="size-3" />
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
                   <Button
                     type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={handleClickRear}
-                    className="h-8 w-8 p-0"
+                    variant={rearImagesState[0].isPrimary ? "default" : "secondary"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSetAsPrimary('rear');
+                    }}
+                    className={`size-6 p-0 rounded-sm ${rearImagesState[0].isPrimary ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
                   >
-                    <EditIcon className="w-4 h-4" />
+                    <BadgeCheckIcon className="size-4" />
                   </Button>
                   <Button
                     type="button"
-                    size="sm"
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openPreviewModal(rearImagesState, 0, 'rear');
+                    }}
+                    className="size-6 p-0 rounded-sm"
+                  >
+                    <EyeIcon className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    type="button"
                     variant="destructive"
-                    onClick={handleRemoveRearImage}
-                    className="h-8 w-8 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveRearImage(e);
+                    }}
+                    className="size-6 p-0 rounded-sm"
                   >
                     <DeleteIcon className="w-4 h-4" />
                   </Button>
@@ -481,10 +691,10 @@ export function MultipleImageUpload({
         </div>
 
         {/* Second Column: Other Images */}
-        <div className="space-y-4">
+        <div className="">
           {otherImagesState.length === 0 ? (
             <div
-              className={`w-full h-full min-h-[272px] border-2 border-dashed rounded-xl p-4 text-center transition-all cursor-pointer bg-white ${isDraggingOther
+              className={`w-full h-full border-2 border-dashed rounded-xl p-4 text-center transition-all cursor-pointer bg-white ${isDraggingOther
                   ? 'border-blue-500 bg-blue-50 ring-4 ring-blue-50'
                   : 'border-gray-300 hover:border-gray-400'
                 }`}
@@ -493,9 +703,9 @@ export function MultipleImageUpload({
               onDrop={handleDropOther}
               onClick={handleClickOther}
             >
-              <div className="h-full flex flex-col items-center justify-center gap-2">
+              <div className="h-full flex flex-col items-center justify-center gap-2 hover:scale-110 transition-transform">
                 <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-200">
-                  <PlusIcon className="w-5 h-5 text-gray-400" />
+                  <MutipleImageIcon className="w-5 h-5 text-gray-400" />
                 </div>
                 <p className="text-sm font-semibold text-gray-900">Drag & Drop Images</p>
                 <p className="text-xs text-gray-500 max-w-xs mx-auto text-center">
@@ -504,101 +714,52 @@ export function MultipleImageUpload({
               </div>
             </div>
           ) : (
-            <div className="border-2 border-gray-200 rounded-xl">
+            <div className="border-2 border-gray-200 rounded-xl h-full max-h-[250px] flex flex-col items-center overflow-hidden">
               {/* Main Preview Slider */}
-              <div className="relative p-2 group aspect-video md:aspect-auto md:h-54 overflow-hidden cursor-grab active:cursor-grabbing">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={otherImagesState[selectedOtherImageIndex]?.id || 'empty'}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.2 }}
-                    className="w-full h-full"
-                    drag="x"
-                    dragConstraints={{ left: 0, right: 0 }}
-                    onDragEnd={(_, info) => {
-                      const swipeThreshold = 50;
-                      if (info.offset.x < -swipeThreshold) {
-                        // Swipe left -> Next image
-                        if (selectedOtherImageIndex < otherImagesState.length - 1) {
-                          setSelectedOtherImageIndex(selectedOtherImageIndex + 1);
-                        }
-                      } else if (info.offset.x > swipeThreshold) {
-                        // Swipe right -> Previous image
-                        if (selectedOtherImageIndex > 0) {
-                          setSelectedOtherImageIndex(selectedOtherImageIndex - 1);
-                        }
-                      }
-                    }}
-                  >
-                    <img
-                      src={otherImagesState[selectedOtherImageIndex]?.preview || otherImagesState[0].preview}
-                      alt="Other images preview"
-                      className="w-full h-full object-cover pointer-events-none"
-                    />
-                  </motion.div>
-                </AnimatePresence>
-
-                {/* Navigation Arrows */}
-                {otherImagesState.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (selectedOtherImageIndex > 0) {
-                          setSelectedOtherImageIndex(selectedOtherImageIndex - 1);
-                        }
-                      }}
-                      disabled={selectedOtherImageIndex === 0}
-                      className={`absolute left-2 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-white/80 border border-gray-200 flex items-center justify-center transition-all ${
-                        selectedOtherImageIndex === 0 
-                          ? "opacity-0 pointer-events-none" 
-                          : "hover:bg-white hover:scale-110 shadow-sm"
-                      }`}
-                    >
-                      <ChevronLeftIcon className="w-5 h-5 text-gray-700" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (selectedOtherImageIndex < otherImagesState.length - 1) {
-                          setSelectedOtherImageIndex(selectedOtherImageIndex + 1);
-                        }
-                      }}
-                      disabled={selectedOtherImageIndex === otherImagesState.length - 1}
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-white/80 border border-gray-200 flex items-center justify-center transition-all ${
-                        selectedOtherImageIndex === otherImagesState.length - 1 
-                          ? "opacity-0 pointer-events-none" 
-                          : "hover:bg-white hover:scale-110 shadow-sm"
-                      }`}
-                    >
-                      <ChevronRightIcon className="w-5 h-5 text-gray-700" />
-                    </button>
-                  </>
-                )}
-
-                {/* Navigation Indicators (Dots) */}
-                {otherImagesState.length > 1 && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                    {otherImagesState.map((_, i) => (
-                      <div
-                        key={i}
-                        className={`h-1.5 rounded-full transition-all ${
-                          i === selectedOtherImageIndex 
-                            ? "w-4 bg-blue-500" 
-                            : "w-1.5 bg-gray-300"
-                        }`}
-                      />
+              <div 
+                className="relative group w-full flex-8 p-2 flex items-center justify-center min-h-0"
+              >
+                <Carousel 
+                  setApi={setMainApi} 
+                  opts={{ loop: false }} 
+                  className="w-full h-full"
+                >
+                  <CarouselContent className="h-full ml-0" wrapperClassName="h-full">
+                    {otherImagesState.map((image, index) => (
+                      <CarouselItem 
+                        key={image.id} 
+                        className="h-full pl-0 flex items-center justify-center cursor-pointer"
+                        onClick={() => openPreviewModal(otherImagesState, index, 'other')}
+                      >
+                        <img
+                          src={image.preview}
+                          alt="Other images preview"
+                          className="max-w-full max-h-full object-contain pointer-events-none"
+                        />
+                        {image.isPrimary && (
+                          <div className="absolute top-0 right-0 bg-blue-600 text-white p-1.5 rounded-tr-lg rounded-bl-lg shadow-sm z-10">
+                            <BadgeCheckIcon className="size-4" />
+                          </div>
+                        )}
+                      </CarouselItem>
                     ))}
-                  </div>
-                )}
+                  </CarouselContent>
+                  
+                  {otherImagesState.length > 1 && (
+                    <>
+                      <CarouselPrevious 
+                        className="left-2 bg-white/80 border-gray-200 hover:bg-white transition-opacity opacity-0 group-hover:opacity-100 z-10 disabled:hidden" 
+                      />
+                      <CarouselNext 
+                        className="right-2 bg-white/80 border-gray-200 hover:bg-white transition-opacity opacity-0 group-hover:opacity-100 z-10 disabled:hidden" 
+                      />
+                    </>
+                  )}
+                </Carousel>
               </div>
 
               {/* 4-Box Gallery */}
-              <div className="grid grid-cols-4 gap-1 border-t-2 border-gray-200 p-1">
+              <div className="grid grid-cols-4 gap-1 border-t-2 border-gray-200 flex-2 items-center justify-center p-1">
                 {otherImagesState.slice(0, 3).map((image, index) => {
                   const hasMore = index === 2 && otherImagesState.length > 3;
                   const remainingCount = otherImagesState.length - 3;
@@ -623,20 +784,6 @@ export function MultipleImageUpload({
                           <span className="text-white font-bold text-lg">+{remainingCount}</span>
                         </div>
                       )}
-
-
-                      <div className="absolute top-0 right-0 size-3 bg-white rounded-full">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            handleRemoveOtherImage(image.id, index, e);
-                          }}
-                        >
-                          <RoundCloseIcon className="absolute size-3 p-0 m-0 top-0 right-0 text-red-500" />
-                        </button>
-                      </div>
                     </div>
                   );
                 })}
@@ -668,6 +815,87 @@ export function MultipleImageUpload({
         </div>
       </div>
 
+      <CustomPopup
+        open={previewModal.isOpen}
+        onOpenChange={(open) => !open && closePreviewModal()}
+        title={
+          previewModal.type === 'front' ? 'Front Image' :
+          previewModal.type === 'rear' ? 'Rear Image' : 'Other Images'
+        }
+        className="sm:max-w-[600px]"
+        footer={
+          <div className="flex w-full justify-between items-center">
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleModalImageDelete}
+              className="gap-2"
+            >
+              <DeleteIcon className="w-4 h-4" />
+              Delete
+            </Button>
+            <div className="flex gap-2">
+              {(previewModal.type === 'front' || previewModal.type === 'rear') && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={(e) => {
+                    if (previewModal.type === 'front') {
+                      handleClickFront();
+                    } else if (previewModal.type === 'rear') {
+                      handleClickRear();
+                    }
+                  }}
+                  className="gap-2"
+                >
+                  <EditIcon className="w-4 h-4" />
+                  Change
+                </Button>
+              )}
+              {previewModal.type === 'other' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSetAsPrimary()}
+                  disabled={previewModal.images[previewModal.currentIndex]?.isPrimary}
+                >
+                  {previewModal.images[previewModal.currentIndex]?.isPrimary ? 'Primary' : 'Set as Primary'}
+                </Button>
+              )}
+              <DialogClose asChild>
+                <Button type="button" variant="outline">Close</Button>
+              </DialogClose>
+            </div>
+          </div>
+        }
+      >
+        <div className="relative h-[400px] w-full flex items-center justify-center overflow-hidden bg-gray-50 rounded-lg group">
+          <Carousel 
+            setApi={setPreviewApi} 
+            opts={{ loop: false, startIndex: previewModal.currentIndex }} 
+            className="w-full h-full"
+          >
+            <CarouselContent className="h-full ml-0" wrapperClassName="h-full">
+              {previewModal.images.map((image) => (
+                <CarouselItem key={image.id} className="h-full pl-0 flex items-center justify-center p-4">
+                  <img
+                    src={image.preview}
+                    alt="Preview"
+                    className="max-w-full max-h-full object-contain shadow-sm rounded-md"
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+
+            {previewModal.images.length > 1 && (
+              <>
+                <CarouselPrevious className="left-4 size-10 bg-white/90 border-gray-200 hover:bg-white shadow-md transition-opacity opacity-0 group-hover:opacity-100 disabled:hidden" />
+                <CarouselNext className="right-4 size-10 bg-white/90 border-gray-200 hover:bg-white shadow-md transition-opacity opacity-0 group-hover:opacity-100 disabled:hidden" />
+              </>
+            )}
+          </Carousel>
+        </div>
+      </CustomPopup>
     </div>
   );
 }

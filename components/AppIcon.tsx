@@ -6,12 +6,13 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaArrowRight,
+  FaImage,
 } from 'react-icons/fa';
 import {  MdCancel, MdOutlineInventory2, MdDelete} from 'react-icons/md';
 import { AiOutlineDashboard, AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { IoIosCloseCircleOutline, IoMdClose } from "react-icons/io";
+import { IoIosCloseCircleOutline, IoMdClose, IoMdEye } from "react-icons/io";
 import { SiNextdotjs } from "react-icons/si";
-import { IoSettingsOutline } from "react-icons/io5";
+import { IoImagesOutline, IoSettingsOutline } from "react-icons/io5";
 import { AudioWaveform, BadgeCheck, Bell, BookOpen, Bot, CheckIcon, ChevronDownIcon, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUpIcon, CircleIcon, Command, CreditCard, Folder, Forward, Frame, GalleryVerticalEnd, LogOut, MinusIcon, MoreHorizontal, PanelLeftIcon, PanelRightIcon, PieChart, Plus, Settings2, Sparkles, SquareTerminal, Trash2 } from 'lucide-react';
 import { LuArrowUpDown, LuCirclePlus } from "react-icons/lu";
 import { FiEdit, FiMoreVertical } from "react-icons/fi";
@@ -73,6 +74,9 @@ export const LeftIcon = FaChevronLeft;
 export const RightIcon = FaChevronRight;
 export const CirclePlusIcon = LuCirclePlus;
 export const ArrowRightIcon = FaArrowRight;
+export const ImageIcon = FaImage;
+export const MutipleImageIcon = IoImagesOutline;
+export const EyeIcon = IoMdEye;
 
 export const ImagePlusIcon = ({ className = "" }: { className?: string }) => (
   <svg 

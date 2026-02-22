@@ -386,9 +386,9 @@ export default function ItemPage() {
         <div ref={contentRef} className="px-6 pt-6 overflow-y-auto flex-1 custom-scrollbar">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Multi-column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Main Column - Left (2/3) */}
-              <div className="lg:col-span-2 space-y-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Main Column - Left (60%) */}
+              <div className="w-full lg:w-[70%] space-y-6">
                 {/* Basic Details */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Details</h3>
@@ -514,8 +514,8 @@ export default function ItemPage() {
                 </div>
               </div>
 
-              {/* Sidebar - Right (1/3) */}
-              <div className="space-y-6">
+              {/* Sidebar - Right (40%) */}
+              <div className="w-full lg:w-[30%] space-y-6">
                 {/* Images */}
                 <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                   <MultipleImageUpload
@@ -528,8 +528,6 @@ export default function ItemPage() {
                     frontError={errors.front_images}
                     rearError={errors.rear_images}
                     otherError={errors.other_images}
-                    maxOtherImages={15}
-                    maxSize={5}
                   />
                 </div>
 
