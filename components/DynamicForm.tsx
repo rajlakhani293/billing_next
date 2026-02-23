@@ -74,7 +74,6 @@ const DynamicForm = <T extends Record<string, any>>({
   const [formData, setFormData] = useState<T>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const drawerContentRef = useRef<HTMLDivElement>(null);
 
   // Reset isSubmitting when drawer closes
@@ -101,7 +100,6 @@ const DynamicForm = <T extends Record<string, any>>({
   useEffect(() => {
     setFormData(initialValues);
     setErrors({});
-    setTouched({});
   }, [initialValues]);
 
   const validateField = (name: string, value: any) => {
@@ -126,7 +124,6 @@ const DynamicForm = <T extends Record<string, any>>({
 
   const handleChange = (name: string, value: any) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-    setTouched(prev => ({ ...prev, [name]: true }));
     
     const error = validateField(name, value);
     setErrors(prev => ({ ...prev, [name]: error }));
@@ -183,7 +180,6 @@ const DynamicForm = <T extends Record<string, any>>({
       setTimeout(() => {
         setFormData(initialValues);
         setErrors({});
-        setTouched({});
         onClose?.();
       }, 100); // Increased delay to ensure drawer close animation completes
     }
@@ -209,7 +205,7 @@ const DynamicForm = <T extends Record<string, any>>({
               )}
             </div>
             <div className="flex items-center gap-2">
-              {extra && extra({ formData, handleChange, errors, touched })}
+              {extra && extra({ formData, handleChange, errors })}
               <DrawerClose asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md">
                   <CloseIcon className="h-4 w-4" />
@@ -300,7 +296,7 @@ const DynamicForm = <T extends Record<string, any>>({
               </div>
             ))}
 
-            {typeof children === "function" && children({ formData, handleChange, errors, touched })}
+            {typeof children === "function" && children({ formData, handleChange, errors })}
           </form>
         </div>
 

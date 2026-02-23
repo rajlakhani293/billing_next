@@ -6,8 +6,8 @@ import Cookies from 'js-cookie'
 import { useRouter, usePathname } from 'next/navigation'
 import { setSessionData, clearSessionData } from '@/lib/redux/sessionSlice'
 import type { AppDispatch } from '@/lib/redux/store'
-import toast from 'react-hot-toast'
 import { settings } from '@/lib/api/settings'
+import { showToast } from '../toast'
 
 interface SessionContextType {
   isLoading: boolean;
@@ -61,7 +61,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error("Session load failed", error)
-      toast.error(typeof error === 'string' ? error : "Session load failed")
+      showToast.error(typeof error === 'string' ? error : "Session load failed")
       clearSession()
       router.push("/login")
     } finally {

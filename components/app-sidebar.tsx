@@ -9,7 +9,7 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { DashboardIcon, InventoryIcon, NextJsIcon, PanelRight, SettingIcon } from "@/components/AppIcon"
+import { DashboardIcon, InventoryIcon, NextJsIcon, PanelRight, SettingIcon, SalesIcon } from "@/components/AppIcon"
 import { useSidebar } from "@/components/ui/sidebar"
 
 // This is sample data.
@@ -19,6 +19,11 @@ const data = {
       title: "Dashboard",
       url: "/dashboard",
       icon: DashboardIcon
+    },
+    {
+      title: "Sales",
+      url: "/sales",
+      icon: SalesIcon
     },
     {
       title: "Inventory",

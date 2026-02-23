@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { toast } from "react-hot-toast";
 import dayjs from "dayjs";
 import {
   Table,
@@ -43,6 +42,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ArrowUpDownIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon, DeleteIcon, DownIcon, EditIcon, InfoIcon, MoreIcon, PlusIcon, RoundCloseIcon, SearchIcon, UpIcon } from "./AppIcon";
+import { showToast } from "@/lib/toast";
 
 const MAX_ICONS_TO_SHOW = 3;
 const MAX_CHARS_PER_LINE = 35;
@@ -230,15 +230,15 @@ const DynamicTable = ({
         });
 
         if ("data" in result && result.data.success === true) {
-          toast.success(result.data.message || "Deleted Successfully");
+          showToast.success(result?.message || "Deleted Successfully");
           triggerRefresh?.();
         } else if ("error" in result) {
           const error = result.error as any;
-          toast.error(`Delete Failed: ${error.data?.message || error.message}`);
+          showToast.error(`Delete Failed: ${error.data?.message || error.message}`);
         }
       } catch (error) {
         const err = error as any;
-        toast.error(`Delete Failed: ${err.data?.message || "Network Error"}`);
+        showToast.error(`Delete Failed: ${err.data?.message || "Network Error"}`);
       } finally {
         setDeleteModalOpen(false);
         setItemToDelete(null);
@@ -292,13 +292,13 @@ const DynamicTable = ({
             })
 
             if ("data" in result && result.data.success === true) {
-              toast.success(result.data.message || "Status Updated");
+              showToast.success(result?.message || "Status Updated");
               triggerRefresh?.();
               return true;
             }
           } catch (error) {
             const err = error as any;
-            toast.error(
+            showToast.error(
               `Status Update Failed: ${err.status} - ${err.data?.message || err.message
               }`
             );

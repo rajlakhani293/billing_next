@@ -4,7 +4,7 @@ import { useEffect, useState } from "@/lib/imports";
 import DynamicForm from "@/components/DynamicForm";
 import { items } from "@/lib/api/items";
 import { buildPayload, getInitialFormValues, type FormField } from "@/lib/utils";
-import toast from "react-hot-toast";
+import { showToast } from "@/lib/toast";
 
 interface UnitFormProps {
   isOpen: boolean;
@@ -59,10 +59,10 @@ export function UnitForm({
       resetForm();
       onClose?.();
       onSuccess?.();
-      toast.success(id ? "Unit updated successfully!" : "Unit created successfully!");
+      showToast.success(id ? "Unit updated successfully!" : "Unit created successfully!");
       return result;
     } catch (error) {
-      toast.error(id ? "Failed to update unit" : "Failed to create unit");
+      showToast.error(error);
       return error;
     }
   };

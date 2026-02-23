@@ -7,6 +7,7 @@ import {
   FaChevronRight,
   FaArrowRight,
   FaImage,
+  FaSalesforce,
 } from 'react-icons/fa';
 import {  MdCancel, MdOutlineInventory2, MdDelete} from 'react-icons/md';
 import { AiOutlineDashboard, AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
@@ -61,6 +62,7 @@ export const NextJsIcon = SiNextdotjs;
 export const SettingIcon = IoSettingsOutline;
 export const DashboardIcon = AiOutlineDashboard;
 export const InventoryIcon = MdOutlineInventory2;
+export const SalesIcon = FaSalesforce;
 export const ArrowUpDownIcon = LuArrowUpDown;
 export const MoreIcon = FiMoreVertical;
 export const DeleteIcon = MdDelete;

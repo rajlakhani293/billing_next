@@ -16,6 +16,7 @@ import { TaxForm } from "@/app/(dashboard)/settings/taxes/createUpdate";
 import { BrandForm } from "@/app/(dashboard)/settings/brands/createUpdate";
 import { settings } from "@/lib/api/settings";
 import { MultipleImageUpload } from "@/components/ui/multiple-image-upload";
+import { showToast } from "@/lib/toast";
 
 export default function ItemPage() {
   const router = useRouter();
@@ -77,7 +78,7 @@ export default function ItemPage() {
       step: 0.01
     },
     {
-      name: "tax_rate",
+      name: "tax",
       label: "Tax Rate",
       type: "select",
       placeholder: "Select Tax Rate",
@@ -142,9 +143,18 @@ export default function ItemPage() {
       placeholder: "Enter a detailed description...",
       rows: 3
     },
+    {
+      name: "item_code",
+      label: "Item Code",
+      type: "hidden"
+    }
   ];
 
-  const [formData, setFormData] = useState<any>(() => getInitialFormValues(Schema));
+  const [formData, setFormData] = useState<any>(() => ({
+    ...getInitialFormValues(Schema),
+    item_images_metadata: [],
+    item_images_files: {}
+  }));
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateField = (name: string, value: any) => {
@@ -185,21 +195,37 @@ export default function ItemPage() {
 
     if (Object.keys(newErrors).length === 0) {
       try {
-        const processedValues = {
-          ...formData,
-        };
+        const formDataPayload = new FormData();
+        
+        // Append regular form fields
+        Object.entries(formData).forEach(([key, value]) => {
+          if (['item_images_metadata', 'item_images_files', 'front_images', 'rear_images', 'other_images'].includes(key)) return;
+          if (value !== null && value !== undefined) {
+            formDataPayload.append(key, value.toString());
+          }
+        });
+
+        // Append item_images metadata
+        formDataPayload.append('item_images', JSON.stringify(formData.item_images_metadata || []));
+
+        // Append image files
+        const imageFiles = formData.item_images_files || {};
+        Object.entries(imageFiles).forEach(([key, file]) => {
+          formDataPayload.append(key, file as File);
+        });
 
         if (isEdit) {
-          await editItem({ id, payLoad: processedValues }).unwrap();
+          const result:any = await editItem({ id, payLoad: formDataPayload }).unwrap();
+          showToast.success(result?.message || "Item updated successfully");
         } else {
-          await createItem(processedValues).unwrap();
+          const result:any = await createItem(formDataPayload).unwrap();
+          showToast.success(result?.message || "Item created successfully");
         }
         
         setIsSubmitting(false);
         router.push('/inventory/items');
         return;
-      } catch (error) {
-        console.error("Submit failed:", error);
+      } catch (error: any) {
         setIsSubmitting(false);
       }
     } else {
@@ -212,8 +238,15 @@ export default function ItemPage() {
       const result: any = await getItemData({ id: parseInt(id) }).unwrap();
       const data = result.data;
       if (result?.data) {
-        const baseValues = getInitialFormValues(Schema, data);
-        setFormData(baseValues);
+        const baseValues = getInitialFormValues(Schema, data, 'edit');
+        setFormData({
+          ...baseValues,
+          category_id: data.category?.toString() || "",
+          primary_unit_id: data.primary_unit?.toString() || "",
+          tax: data.tax?.toString() || "",
+          item_images_metadata: data.item_images || [],
+          item_images_files: {}
+        });
       }
     } catch (e) {
       console.error("Fetch failed:", e);
@@ -245,7 +278,6 @@ export default function ItemPage() {
       setTaxes((taxesResult as any)?.data?.map((item: any) => ({
         label: `${item.tax_name} (${item.tax_value}%)`,
         value: item.id,
-        rate: item.tax_rate
       })) || []);
       setBrands((brandsResult as any)?.data?.map((item: any) => ({
         label: item.brand_name,
@@ -269,7 +301,6 @@ export default function ItemPage() {
 
   const handleAddFormSuccess = () => {
     handleCloseAddForm();
-    // Refetch data to update dropdowns
     fetchCategoriesAndUnits();
   };
 
@@ -289,7 +320,6 @@ export default function ItemPage() {
         placeholder={field.placeholder || `Select ${field.label}`}
         required={field.required}
         error={errors[field.name]}
-        touched={!!formData[field.name]}
       >
         {field.options?.filter(option => option != null && option.value != null).map((option) => (
           <SelectItem key={option.value} value={option.value.toString()}>
@@ -384,7 +414,7 @@ export default function ItemPage() {
           </div>
         </div>
         <div ref={contentRef} className="px-6 pt-6 overflow-y-auto flex-1 custom-scrollbar">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} noValidate className="space-y-6">
             {/* Multi-column Layout */}
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Main Column - Left (60%) */}
@@ -408,7 +438,6 @@ export default function ItemPage() {
                               placeholder={field.placeholder || `Select ${field.label}`}
                               required={field.required}
                               error={errors[field.name]}
-                              touched={!!formData[field.name]}
                             >
                               {field.options?.filter(option => option != null && option.value != null).map((option) => (
                                 <SelectItem key={option.value} value={option.value.toString()}>
@@ -428,7 +457,6 @@ export default function ItemPage() {
                             min={field.min}
                             step={field.step}
                             error={errors[field.name]}
-                            touched={!!formData[field.name]}
                           />
                         )}
                       </div>
@@ -440,9 +468,9 @@ export default function ItemPage() {
                 <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing & Tax</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {Schema.filter(field => ['purchase_price', 'selling_price', 'tax_rate'].includes(field.name)).map((field) => (
+                    {Schema.filter(field => ['purchase_price', 'selling_price', 'tax'].includes(field.name)).map((field) => (
                       <div key={field.name}>
-                        {field.name === 'tax_rate' ? (
+                        {field.name === 'tax' ? (
                           <SelectWithAddButton field={field} formType="tax" />
                         ) : (
                           <UniFieldInput
@@ -455,7 +483,6 @@ export default function ItemPage() {
                             min={field.min}
                             step={field.step}
                             error={errors[field.name]}
-                            touched={!!formData[field.name]}
                           />
                         )}
                       </div>
@@ -482,7 +509,6 @@ export default function ItemPage() {
                             min={field.min}
                             step={field.step}
                             error={errors[field.name]}
-                            touched={!!formData[field.name]}
                           />
                         )}
                       </div>
@@ -507,7 +533,6 @@ export default function ItemPage() {
                         as="textarea"
                         rows={4}
                         error={errors[field.name]}
-                        touched={!!formData[field.name]}
                       />
                     </div>
                   ))}
@@ -519,12 +544,18 @@ export default function ItemPage() {
                 {/* Images */}
                 <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                   <MultipleImageUpload
-                    frontImages={formData.front_images || []}
-                    rearImages={formData.rear_images || []}
-                    otherImages={formData.other_images || []}
+                    key={id}
+                    initialImages={formData.item_images_metadata || []}
                     onFrontImagesChange={(files: File[]) => handleChange('front_images', files)}
                     onRearImagesChange={(files: File[]) => handleChange('rear_images', files)}
                     onOtherImagesChange={(files: File[]) => handleChange('other_images', files)}
+                    onImagesUpdate={(data: any) => {
+                      setFormData((prev: any) => ({
+                        ...prev,
+                        item_images_metadata: data.item_images,
+                        item_images_files: data.files
+                      }));
+                    }}
                     frontError={errors.front_images}
                     rearError={errors.rear_images}
                     otherError={errors.other_images}

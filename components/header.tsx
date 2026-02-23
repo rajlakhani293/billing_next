@@ -16,7 +16,7 @@ import { useSession } from "@/hooks/useSession";
 import { auth } from "@/lib/api/auth";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-import toast from "react-hot-toast";
+import { showToast } from "@/lib/toast";
 
 export function Header() {
   const triggerId = useId();
@@ -43,11 +43,11 @@ export function Header() {
       try {
         // const refresh_token = Cookies.get("refresh_token");
         // await logout({ refresh_token }).unwrap();
-        toast.success("Logout successfully");
+        showToast.success("Logout successfully");
         Cookies.remove("token");
         router.push("/login");
       } catch (error: any) {
-        toast.error(error?.data?.message || "Logout failed");
+        showToast.error(error?.data?.message || "Logout failed");
       }
     }
   };

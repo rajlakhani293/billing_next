@@ -4,7 +4,7 @@ import { useEffect, useState } from "@/lib/imports";
 import DynamicForm from "@/components/DynamicForm";
 import { items } from "@/lib/api/items";
 import { FormField, getInitialFormValues } from "@/lib/utils";
-import toast from "react-hot-toast";
+import { showToast } from "@/lib/toast";
 
 interface CategoryFormProps {
   isOpen: boolean;
@@ -53,19 +53,17 @@ export function CategoryForm({
         : await createItemCategory(processedValues).unwrap();
 
       if (result?.success) {
-        const message = id ? "Category updated successfully!" : "Category created successfully!";
-        toast.success(message);
+        showToast.success(id ? "Category updated successfully!" : "Category created successfully!");
         resetForm();
         onClose?.();
         onSuccess?.();
       } else {
-        toast.error((result as any)?.message || "Operation failed");
+        showToast.error(result);
       }
 
       return result;
     } catch (error: any) {
-      const errorMessage = error?.data?.message || error?.message || "Operation failed";
-      toast.error(errorMessage);
+      showToast.error(error);
       console.error("Submit failed:", error);
       return error;
     }

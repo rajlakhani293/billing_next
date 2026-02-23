@@ -3,13 +3,12 @@
 import React from "react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "./textarea"
+import { Field, FieldError, FieldLabel } from "./field"
 
 interface UniFieldInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'prefix' | 'suffix'> {
   label?: string
   error?: string
-  touched?: boolean
   containerClassName?: string
   prefix?: React.ReactNode
   suffix?: React.ReactNode
@@ -21,7 +20,6 @@ export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputPro
   ({ 
     label, 
     error, 
-    touched, 
     containerClassName,
     className,
     id,
@@ -35,15 +33,12 @@ export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputPro
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
     
     return (
-      <div className={cn("space-y-1", containerClassName)}>
+      <Field data-invalid={error ? true : undefined} className={cn("gap-1", containerClassName)}>
         {label && (
-          <Label 
-            htmlFor={inputId}
-            className="text-sm font-medium text-gray-700"
-          >
+          <FieldLabel htmlFor={inputId}>
             {label}
             {props.required && <span className="text-red-500">*</span>}
-          </Label>
+          </FieldLabel>
         )}
         <div className="relative">
           {prefix && (
@@ -57,10 +52,10 @@ export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputPro
               id={inputId}
               rows={rows}
               className={cn(
-                error && touched && "border-red-500 focus:border-red-500 focus:ring-red-500",
+                error && "border-red-500 focus:border-red-500 focus:ring-red-500",
                 className
               )}
-              aria-invalid={error && touched ? true : undefined}
+              aria-invalid={error ? true : undefined}
               value={props.value}
               placeholder={props.placeholder}
               disabled={props.disabled}
@@ -73,13 +68,13 @@ export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputPro
               id={inputId}
               className={cn(
                 "h-10 border-2 bg-white",
-                error && touched && "border-red-500 focus:border-red-500 focus:ring-red-500",
+                error && "border-red-500 focus:border-red-500 focus:ring-red-500",
                 prefix && "pl-12",
                 suffix && "pr-12",
                 props.type === 'number' && "[&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none",
                 className
               )}
-              aria-invalid={error && touched ? true : undefined}
+              aria-invalid={error ? true : undefined}
               {...props}
               onChange={onChange as any}
             />
@@ -90,12 +85,8 @@ export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputPro
             </div>
           )}
         </div>
-        {error && touched && (
-          <p className="text-xs text-red-500 mt-1">
-            {error}
-          </p>
-        )}
-      </div>
+        {error && <FieldError>{error}</FieldError>}
+      </Field>
     )
   }
 )

@@ -1,12 +1,13 @@
 import { fetchBaseQuery, type BaseQueryFn, type FetchArgs, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 import { setUnauthorized, setServerError, setPermissionError } from '../redux/sessionSlice'; 
 import { prepareHeadersWithToken } from './apiUtils';
-import toast from 'react-hot-toast';
+import { showToast } from '../toast';
 
 
 interface BackendError {
   success: boolean;
-  code: string;       
+  code: string | number;       
+  message?: string;
   errors?: any;       
 }
 
@@ -30,10 +31,17 @@ export const createBaseQueryWithInterceptor = (
 
     const result = await actualBaseQuery(modifiedArgs, api, extraOptions);
 
-    if (result.error) {
-      const data = result.error.data as BackendError;
+    // Handle cases where the API returns 200 OK but Indicates failure in the body
+    const data = (result.data || result.error?.data) as BackendError;
+    const isSuccessInBody = data?.success !== false;
+
+    if (result.error || !isSuccessInBody) {
+      // If result.error is missing (200 OK with success: false), we simulate an error
+      // so that .unwrap() in components correctly throws.
+      const errorData = result.error || { status: 400, data };
       
-      const code = data?.code || 'UNKNOWN_ERROR';
+      const code = data?.code?.toString() || 'UNKNOWN_ERROR';
+      const message = data?.message || data?.errors?.message;
 
       // Auth & Session Errors
       if (code === 'UNAUTHORIZED' || code === 'TOKEN_EXPIRED' || code === 'SESSION_EXPIRED') {
@@ -49,25 +57,23 @@ export const createBaseQueryWithInterceptor = (
           }));
       }
 
-      // Server / Database Errors (500+)
-      else if (code === 'SERVER_ERROR' || code === 'DATABASE_ERROR' || code === 'SERVICE_UNAVAILABLE') {
-          const errorMessage = data?.errors?.message || 
-            (code === 'SERVICE_UNAVAILABLE' ? 'Service temporarily unavailable. Please try again later.' : 
-             code === 'DATABASE_ERROR' ? 'Database connection error. Please try again.' :
-             'Something went wrong on our servers. We are already working to fix this.');
-          
-          // Show toast notification immediately
-          toast.error(errorMessage, {
-            duration: 5000,
-            position: 'top-center'
-          });
-          
-          // Also update Redux state for any components that might need it
+      // Show toast for other errors if a message exists
+      else if (message) {
+        showToast.error(message);
+
+        // Also update Redux state for critical server errors
+        if (code === 'SERVER_ERROR' || code === 'DATABASE_ERROR' || code === 'SERVICE_UNAVAILABLE' || (typeof data?.code === 'number' && data.code >= 500)) {
           api.dispatch(setServerError({
             isError: true,
-            code: 500,
-            message: errorMessage
+            code: typeof data?.code === 'number' ? data.code : 500,
+            message: message
           }));
+        }
+      }
+
+      // If we manually detected a failure in a 200 OK response, we must return a structure with 'error'
+      if (!isSuccessInBody && !result.error) {
+        return { error: errorData as FetchBaseQueryError };
       }
     }
 

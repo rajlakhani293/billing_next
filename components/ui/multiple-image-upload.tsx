@@ -16,7 +16,7 @@ import {
 
 interface ImageFile {
   id: string;
-  file: File;
+  file?: File;
   preview: string;
   isPrimary?: boolean;
 }
@@ -29,12 +29,11 @@ interface PreviewModalState {
 }
 
 interface MultipleImageUploadProps {
-  frontImages?: File[];
-  rearImages?: File[];
-  otherImages?: File[];
+  initialImages?: any[];
   onFrontImagesChange: (files: File[]) => void;
   onRearImagesChange: (files: File[]) => void;
   onOtherImagesChange: (files: File[]) => void;
+  onImagesUpdate?: (data: { item_images: any[], files: Record<string, File> }) => void;
   frontError?: string;
   rearError?: string;
   otherError?: string;
@@ -43,41 +42,21 @@ interface MultipleImageUploadProps {
 }
 
 export function MultipleImageUpload({
-  frontImages = [],
-  rearImages = [],
-  otherImages = [],
+  initialImages = [],
   onFrontImagesChange,
   onRearImagesChange,
   onOtherImagesChange,
+  onImagesUpdate,
   frontError,
   rearError,
   otherError,
   className = "",
   accept = "image/*"
 }: MultipleImageUploadProps) {
-  const [frontImagesState, setFrontImagesState] = useState<ImageFile[]>(() =>
-    frontImages.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      file,
-      preview: URL.createObjectURL(file)
-    }))
-  );
-
-  const [rearImagesState, setRearImagesState] = useState<ImageFile[]>(() =>
-    rearImages.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      file,
-      preview: URL.createObjectURL(file)
-    }))
-  );
-
-  const [otherImagesState, setOtherImagesState] = useState<ImageFile[]>(() =>
-    otherImages.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      file,
-      preview: URL.createObjectURL(file)
-    }))
-  );
+  const hasInitialized = useRef(false);
+  const [frontImagesState, setFrontImagesState] = useState<ImageFile[]>([]);
+  const [rearImagesState, setRearImagesState] = useState<ImageFile[]>([]);
+  const [otherImagesState, setOtherImagesState] = useState<ImageFile[]>([]);
   const maxSize = 5;
   const maxOtherImages = 15;
 
@@ -104,6 +83,92 @@ export function MultipleImageUpload({
            rearImagesState.some(img => img.isPrimary) || 
            otherImagesState.some(img => img.isPrimary);
   };
+
+  const syncImageData = () => {
+    if (!onImagesUpdate) return;
+
+    const allImageData: any[] = [];
+    const fileMapping: Record<string, File> = {};
+    let currentKeyIndex = 1;
+
+    // Process Front Images
+    frontImagesState.forEach((img) => {
+      const key = `item_img${currentKeyIndex}`;
+      allImageData.push({
+        sort_order: 0,
+        is_primary: !!img.isPrimary,
+        key: key,
+        url: img.file ? undefined : img.preview
+      });
+      if (img.file) fileMapping[key] = img.file;
+      currentKeyIndex++;
+    });
+
+    // Process Rear Images
+    rearImagesState.forEach((img) => {
+      const key = `item_img${currentKeyIndex}`;
+      allImageData.push({
+        sort_order: 1,
+        is_primary: !!img.isPrimary,
+        key: key,
+        url: img.file ? undefined : img.preview
+      });
+      if (img.file) fileMapping[key] = img.file;
+      currentKeyIndex++;
+    });
+
+    // Process Other Images
+    otherImagesState.forEach((img, index) => {
+      const key = `item_img${currentKeyIndex}`;
+      allImageData.push({
+        sort_order: index + 2, // Start from 2 after front and rear
+        is_primary: !!img.isPrimary,
+        key: key,
+        url: img.file ? undefined : img.preview
+      });
+      if (img.file) fileMapping[key] = img.file;
+      currentKeyIndex++;
+    });
+
+    onImagesUpdate({
+      item_images: allImageData,
+      files: fileMapping
+    });
+  };
+
+  useEffect(() => {
+    syncImageData();
+  }, [frontImagesState, rearImagesState, otherImagesState]);
+
+  // Sync initial images when they change (e.g., after fetch)
+  useEffect(() => {
+    if (initialImages && initialImages.length > 0 && !hasInitialized.current) {
+      const front: ImageFile[] = [];
+      const rear: ImageFile[] = [];
+      const other: ImageFile[] = [];
+
+      initialImages.forEach((img: any) => {
+        const imageFile: ImageFile = {
+          id: Math.random().toString(36).substr(2, 9),
+          preview: img.url,
+          isPrimary: img.is_primary
+        };
+
+        if (img.sort_order === 0) {
+          front.push(imageFile);
+        } else if (img.sort_order === 1) {
+          rear.push(imageFile);
+        } else {
+          other.push(imageFile);
+        }
+      });
+
+      setFrontImagesState(front);
+      setRearImagesState(rear);
+      setOtherImagesState(other);
+      hasInitialized.current = true;
+    }
+  }, [initialImages]);
 
   // Front Image Handlers
   const handleDragOverFront = (e: React.DragEvent) => {
@@ -155,7 +220,7 @@ export function MultipleImageUpload({
       }));
 
       setFrontImagesState(newImages);
-      onFrontImagesChange(newImages.map(img => img.file));
+      onFrontImagesChange(newImages.map(img => img.file).filter((f): f is File => !!f));
       
       // Update preview modal if it's open for front image
       if (previewModal.isOpen && previewModal.type === 'front') {
@@ -269,7 +334,7 @@ export function MultipleImageUpload({
       }));
 
       setRearImagesState(newImages);
-      onRearImagesChange(newImages.map(img => img.file));
+      onRearImagesChange(newImages.map(img => img.file).filter((f): f is File => !!f));
 
       // Update preview modal if it's open for rear image
       if (previewModal.isOpen && previewModal.type === 'rear') {
@@ -367,7 +432,7 @@ export function MultipleImageUpload({
 
       const updatedImages = [...otherImagesState, ...newImages];
       setOtherImagesState(updatedImages);
-      onOtherImagesChange(updatedImages.map(img => img.file));
+      onOtherImagesChange(updatedImages.map(img => img.file).filter((f): f is File => !!f));
     }
 
     // Process Front and Rear assignments
@@ -388,10 +453,10 @@ export function MultipleImageUpload({
 
       if (slot.type === 'front') {
         setFrontImagesState([newImage]);
-        onFrontImagesChange([newImage.file]);
+        if (newImage.file) onFrontImagesChange([newImage.file]);
       } else if (slot.type === 'rear') {
         setRearImagesState([newImage]);
-        onRearImagesChange([newImage.file]);
+        if (newImage.file) onRearImagesChange([newImage.file]);
       }
     });
   };
@@ -407,7 +472,7 @@ export function MultipleImageUpload({
     e?.stopPropagation();
     const updatedImages = otherImagesState.filter(img => img.id !== id);
     setOtherImagesState(updatedImages);
-    onOtherImagesChange(updatedImages.map(img => img.file));
+    onOtherImagesChange(updatedImages.map(img => img.file).filter((f): f is File => !!f));
 
     if (index <= selectedOtherImageIndex) {
       setSelectedOtherImageIndex(Math.max(0, selectedOtherImageIndex - 1));
@@ -484,9 +549,9 @@ export function MultipleImageUpload({
     setOtherImagesState(newOther);
     
     // Trigger callbacks to sync with parent
-    onFrontImagesChange(newFront.map(img => img.file));
-    onRearImagesChange(newRear.map(img => img.file));
-    onOtherImagesChange(newOther.map(img => img.file));
+    onFrontImagesChange(newFront.map(img => img.file).filter((f): f is File => !!f));
+    onRearImagesChange(newRear.map(img => img.file).filter((f): f is File => !!f));
+    onOtherImagesChange(newOther.map(img => img.file).filter((f): f is File => !!f));
     
     if (previewModal.isOpen) {
       setPreviewModal(prev => {
@@ -577,17 +642,19 @@ export function MultipleImageUpload({
                   >
                     <EyeIcon className="size-4" />
                   </Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFrontImage(e);
-                    }}
-                    className="size-6 p-0 rounded-sm"
-                  >
-                    <DeleteIcon className="size-4" />
-                  </Button>
+                  {!frontImagesState[0].isPrimary && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFrontImage(e);
+                      }}
+                      className="size-6 p-0 rounded-sm"
+                    >
+                      <DeleteIcon className="size-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -663,17 +730,19 @@ export function MultipleImageUpload({
                   >
                     <EyeIcon className="w-4 h-4" />
                   </Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveRearImage(e);
-                    }}
-                    className="size-6 p-0 rounded-sm"
-                  >
-                    <DeleteIcon className="w-4 h-4" />
-                  </Button>
+                  {!rearImagesState[0].isPrimary && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveRearImage(e);
+                      }}
+                      className="size-6 p-0 rounded-sm"
+                    >
+                      <DeleteIcon className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -717,7 +786,7 @@ export function MultipleImageUpload({
             <div className="border-2 border-gray-200 rounded-xl h-full max-h-[250px] flex flex-col items-center overflow-hidden">
               {/* Main Preview Slider */}
               <div 
-                className="relative group w-full flex-8 p-2 flex items-center justify-center min-h-0"
+                className="border-b-2 border-gray-200 relative group w-full flex-8 p-2 flex items-center justify-center min-h-0"
               >
                 <Carousel 
                   setApi={setMainApi} 
@@ -759,7 +828,7 @@ export function MultipleImageUpload({
               </div>
 
               {/* 4-Box Gallery */}
-              <div className="grid grid-cols-4 gap-1 border-t-2 border-gray-200 flex-2 items-center justify-center p-1">
+              <div className="grid grid-cols-4 gap-1 border-gray-200 flex-2 items-center justify-center p-1">
                 {otherImagesState.slice(0, 3).map((image, index) => {
                   const hasMore = index === 2 && otherImagesState.length > 3;
                   const remainingCount = otherImagesState.length - 3;
@@ -825,15 +894,17 @@ export function MultipleImageUpload({
         className="sm:max-w-[600px]"
         footer={
           <div className="flex w-full justify-between items-center">
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleModalImageDelete}
-              className="gap-2"
-            >
-              <DeleteIcon className="w-4 h-4" />
-              Delete
-            </Button>
+            {!previewModal.images[previewModal.currentIndex]?.isPrimary && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleModalImageDelete}
+                className="gap-2"
+              >
+                <DeleteIcon className="w-4 h-4" />
+                Delete
+              </Button>
+            )}
             <div className="flex gap-2">
               {(previewModal.type === 'front' || previewModal.type === 'rear') && (
                 <Button

@@ -4,7 +4,7 @@ import { useEffect, useState } from "@/lib/imports";
 import DynamicForm from "@/components/DynamicForm";
 import { settings } from "@/lib/api/settings";
 import { FormField, getInitialFormValues } from "@/lib/utils";
-import toast from "react-hot-toast";
+import { showToast } from "@/lib/toast";
 
 interface TaxFormProps {
   isOpen: boolean;
@@ -56,19 +56,17 @@ export function TaxForm({
         : await createTax(processedValues).unwrap();
 
       if (result?.success) {
-        const message = id ? "Tax updated successfully!" : "Tax created successfully!";
-        toast.success(message);
+        showToast.success(id ? "Tax updated successfully!" : "Tax created successfully!");
         resetForm();
         onClose?.();
         onSuccess?.();
       } else {
-        toast.error((result as any)?.message || "Operation failed");
+        showToast.error(result);
       }
 
       return result;
     } catch (error: any) {
-      const errorMessage = error?.data?.message || error?.message || "Operation failed";
-      toast.error(errorMessage);
+      showToast.error(error);
       console.error("Submit failed:", error);
       return error;
     }

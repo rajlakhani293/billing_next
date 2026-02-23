@@ -4,7 +4,7 @@ import { useEffect, useState } from "@/lib/imports";
 import DynamicForm from "@/components/DynamicForm";
 import { settings } from "@/lib/api/settings";
 import { FormField, getInitialFormValues } from "@/lib/utils";
-import toast from "react-hot-toast";
+import { showToast } from "@/lib/toast";
 
 interface BrandFormProps {
   isOpen: boolean;
@@ -48,19 +48,17 @@ export function BrandForm({
         : await createBrand(processedValues).unwrap();
 
       if (result?.success) {
-        const message = id ? "Brand updated successfully!" : "Brand created successfully!";
-        toast.success(message);
+        showToast.success(id ? "Brand updated successfully!" : "Brand created successfully!");
         resetForm();
         onClose?.();
         onSuccess?.();
       } else {
-        toast.error((result as any)?.message || "Operation failed");
+        showToast.error(result);
       }
 
       return result;
     } catch (error: any) {
-      const errorMessage = error?.data?.message || error?.message || "Operation failed";
-      toast.error(errorMessage);
+      showToast.error(error);
       console.error("Submit failed:", error);
       return error;
     }

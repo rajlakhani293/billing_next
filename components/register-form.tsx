@@ -7,17 +7,12 @@ import * as yup from "yup"
 import { Button } from "@/components/ui/button"
 import {
   Field,
-  FieldDescription,
   FieldLabel,
 } from "@/components/ui/field"
 import { UniFieldInput } from "@/components/ui/unifield-input"
 import { UniFieldSelect } from "@/components/ui/unifield-select"
 import {
-  Select,
-  SelectContent,
   SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select"
 import { ImagePlusIcon } from "./AppIcon"
 import { useScrollToError } from "@/lib/hooks/index"
@@ -25,7 +20,6 @@ import { auth } from "@/lib/api/auth"
 import { Card, CardContent } from "./ui/card"
 import { locations } from "@/lib/api/locations"
 import { businessTypeOptions } from "@/lib/utils/constants"
-import { Input } from "./ui/input"
 
 interface RegisterForm {
   companyLogo: File | null
@@ -125,10 +119,9 @@ const Register = () => {
   const [cities, setCities] = useState<any[]>([]);
   const [formData, setFormData] = useState<RegisterForm>(initialValues)
   const [errors, setErrors] = useState<FormErrors>({})
-  const [touched, setTouched] = useState<{ [key: string]: boolean }>({})
 
   // Use the scroll to error hook - moved after state declarations
-  const { formRef, scrollToFirstError: scrollToErrorHook } = useScrollToError(errors, isLoading, touched)
+  const { formRef, scrollToFirstError: scrollToErrorHook } = useScrollToError(errors, isLoading)
 
   const loadCountries = async () => {
     try {
@@ -195,11 +188,6 @@ const Register = () => {
       }))
     }
 
-    // Mark field as touched
-    setTouched(prev => ({
-      ...prev,
-      [field]: true
-    }))
 
     // Validate field on change
     try {
@@ -268,13 +256,6 @@ const Register = () => {
       router.push("/signup")
       return
     }
-
-    // Mark all fields as touched
-    const allTouched: { [key: string]: boolean } = {}
-    Object.keys(formData).forEach(key => {
-      allTouched[key] = true
-    })
-    setTouched(allTouched)
 
     try {
       // Validate all fields
@@ -435,7 +416,6 @@ const Register = () => {
                           value={formData.companyName}
                           onChange={(e) => handleInputChange("companyName", e.target.value)}
                           error={errors.companyName}
-                          touched={touched.companyName}
                           required
                         />
                       </div>
@@ -449,7 +429,6 @@ const Register = () => {
                           value={formData.legalName}
                           onChange={(e) => handleInputChange("legalName", e.target.value)}
                           error={errors.legalName}
-                          touched={touched.legalName}
                         />
                       </div>
 
@@ -463,7 +442,6 @@ const Register = () => {
                           value={formData.phone}
                           readOnly
                           error={errors.phone}
-                          touched={touched.phone}
                           containerClassName="relative"
                           prefix="+91"
                           className="pl-12"
@@ -480,7 +458,6 @@ const Register = () => {
                           value={formData.email}
                           onChange={(e) => handleInputChange("email", e.target.value)}
                           error={errors.email}
-                          touched={touched.email}
                         />
                       </div>
 
@@ -495,7 +472,6 @@ const Register = () => {
                           maxLength={15}
                           style={{ textTransform: "uppercase" }}
                           error={errors.gstnumber}
-                          touched={touched.gstnumber}
                         />
                       </div>
 
@@ -507,7 +483,6 @@ const Register = () => {
                           onValueChange={(value) => handleInputChange("business_type", value)}
                           placeholder="Select Business Type"
                           error={errors.business_type}
-                          touched={touched.business_type}
                         >
                           {businessTypeOptions?.map(option => (
                             <SelectItem key={option.value} value={option.value}>
@@ -528,7 +503,6 @@ const Register = () => {
                           maxLength={10}
                           style={{ textTransform: "uppercase" }}
                           error={errors.pan_no}
-                          touched={touched.pan_no}
                         />
                       </div>
 
@@ -541,7 +515,6 @@ const Register = () => {
                           value={formData.website_url}
                           onChange={(e) => handleInputChange("website_url", e.target.value)}
                           error={errors.website_url}
-                          touched={touched.website_url}
                         />
                       </div>
                     </div>
@@ -560,7 +533,6 @@ const Register = () => {
                           required
                           placeholder="Select Country"
                           error={errors.country}
-                          touched={touched.country}
                         >
                           {countries.map(country => (
                             <SelectItem key={country.id} value={country.id.toString()}>
@@ -579,7 +551,6 @@ const Register = () => {
                           required
                           placeholder="Select State"
                           error={errors.state}
-                          touched={touched.state}
                         >
                           {states.map(state => (
                             <SelectItem key={state.id} value={state.id.toString()}>
@@ -598,7 +569,6 @@ const Register = () => {
                           required
                           placeholder="Select City"
                           error={errors.city}
-                          touched={touched.city}
                         >
                           {cities.map(city => (
                             <SelectItem key={city.id} value={city.id.toString()}>
@@ -620,7 +590,7 @@ const Register = () => {
                           onChange={(e) => handleInputChange("address", e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
-                        {errors.address && touched.address && (
+                        {errors.address && (
                           <p className="text-xs text-red-500 mt-1">{errors.address}</p>
                         )}
                       </div>
@@ -638,7 +608,6 @@ const Register = () => {
                           }}
                           maxLength={6}
                           error={errors.pincode}
-                          touched={touched.pincode}
                         />
                       </div>
                     </div>
