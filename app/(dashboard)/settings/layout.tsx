@@ -3,19 +3,24 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Settings, Package, Receipt, Tag } from "lucide-react"
+import { PersonPlusIcon, TagIcon, TaxIcon } from "@/components/AppIcon"
 
 const data = {
   navMain: [
     {
       title: "Tax",
       url: "/settings/taxes",
-      icon: Receipt
+      icon: TaxIcon
     },
     {
       title: "Brands", 
       url: "/settings/brands",
-      icon: Tag
+      icon: TagIcon
+    },
+    {
+      title: "Parties", 
+      url: "/settings/parties",
+      icon: PersonPlusIcon
     }
   ]
 }

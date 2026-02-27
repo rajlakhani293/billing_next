@@ -20,6 +20,14 @@ const endpointsConfig = {
   editBrand: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`brands/${id}`, payLoad) },
   deleteBrand: { query: deleteMutation("brands/delete") },
   getBrandById: { query: ({ id }: { id: number }) => getMutation(`brands/${id}`) },
+
+  // Parties
+  getPartiesDropdown: { query: () => getMutation("parties/dropdown-list") },
+  getPartiesData: { query: postMutation("parties/get-transactions") },
+  createParty: { query: createMutation("parties/") },
+  editParty: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`parties/${id}`, payLoad) },
+  deleteParty: { query: deleteMutation("parties/delete") },
+  getPartyById: { query: ({ id }: { id: number }) => getMutation(`parties/${id}`) },
   
 }
 

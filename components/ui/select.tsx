@@ -102,11 +102,35 @@ function SelectLabel({
   )
 }
 
+function SelectItemText({
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.ItemText>) {
+  return <SelectPrimitive.ItemText data-slot="select-item-text" {...props} />
+}
+
 function SelectItem({
   className,
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Item>) {
+  let hasItemText = false;
+  const check = (node: React.ReactNode) => {
+    React.Children.forEach(node, (child) => {
+      if (hasItemText) return;
+      if (React.isValidElement(child)) {
+        if (
+          child.type === SelectItemText ||
+          (child.props as any)?.["data-slot"] === "select-item-text"
+        ) {
+          hasItemText = true;
+        } else if ((child.props as any)?.children) {
+          check((child.props as any).children);
+        }
+      }
+    });
+  };
+  check(children);
+
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -124,7 +148,7 @@ function SelectItem({
           <Check className="size-4" />
         </SelectPrimitive.ItemIndicator>
       </span>
-      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+      {hasItemText ? children : <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>}
     </SelectPrimitive.Item>
   )
 }
@@ -183,6 +207,7 @@ export {
   SelectContent,
   SelectGroup,
   SelectItem,
+  SelectItemText,
   SelectLabel,
   SelectScrollDownButton,
   SelectScrollUpButton,

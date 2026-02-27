@@ -3,16 +3,17 @@
 import { useState, useEffect, useRef } from "@/lib/imports";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UniFieldInput } from "@/components/ui/unifield-input";
+import { UniFieldSelect } from "@/components/ui/unifield-select";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { SelectItem } from "@/components/ui/select";
 import { CloseIcon } from "./AppIcon";
 import { Spinner } from "./ui/spinner";
 
 interface FormField {
   name: string;
   label: string;
-  type?: "text" | "number" | "select" | "textarea" | "switch" | "date" | "hidden" | "readonly" | "radio";
+  type?: "text" | "number" | "select" | "textarea" | "switch" | "date" | "hidden" | "readonly" | "radio" | "email";
   placeholder?: string;
   required?: boolean;
   options?: { label: string; value: string | number }[];
@@ -48,6 +49,7 @@ interface DynamicFormProps<T> {
   validationSchema?: any;
   formWidth?: string | number;
   extra?: (formikProps: any) => React.ReactNode;
+  onFieldChange?: (name: string, value: any) => void;
 }
 
 const DynamicForm = <T extends Record<string, any>>({
@@ -63,6 +65,7 @@ const DynamicForm = <T extends Record<string, any>>({
   children,
   validationSchema,
   extra,
+  onFieldChange,
 }: DynamicFormProps<T>) => {
   // Convert formWidth to CSS class
   const getWidthClass = (width: string | number | undefined): string => {
@@ -123,10 +126,14 @@ const DynamicForm = <T extends Record<string, any>>({
   };
 
   const handleChange = (name: string, value: any) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev: T) => ({ ...prev, [name]: value } as T));
     
     const error = validateField(name, value);
-    setErrors(prev => ({ ...prev, [name]: error }));
+    setErrors((prev: Record<string, string>) => ({ ...prev, [name]: error }));
+
+    if (onFieldChange) {
+      onFieldChange(name, value);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -215,79 +222,94 @@ const DynamicForm = <T extends Record<string, any>>({
           </div>
         </DrawerHeader>
         
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {fields.map((field) => (
               <div key={field.name} className="space-y-2">
-                <Label htmlFor={field.name}>
-                  {field.label}
-                  {field.required && <span className="text-red-500">*</span>}
-                </Label>
-
                 {field.type === "hidden" ? (
                   <input type="hidden" name={field.name} value={formData[field.name] || ''} />
                 ) : field.type === "select" && field.options ? (
-                  <Select
+                  <UniFieldSelect
+                    label={field.label}
                     value={formData[field.name] || ''}
                     onValueChange={(value) => handleChange(field.name, value)}
+                    required={field.required}
+                    placeholder={field.placeholder || `Select ${field.label}`}
+                    error={errors[field.name]}
                   >
-                    <SelectTrigger className={errors[field.name] ? 'border-red-500' : ''}>
-                      <SelectValue placeholder={field.placeholder || `Select ${field.label}`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {field.options?.filter(option => option != null && option.value != null).map((option) => (
-                        <SelectItem key={option.value} value={option.value.toString()}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {field.options?.filter(option => option != null && option.value != null).map((option) => (
+                      <SelectItem key={option.value} value={option.value.toString()}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </UniFieldSelect>
                 ) : field.type === "textarea" ? (
-                  <textarea
-                    id={field.name}
-                    rows={field.rows || 3}
-                    placeholder={field.placeholder}
+                  <UniFieldInput
+                    as="textarea"
+                    label={field.label}
                     value={formData[field.name] || ''}
                     onChange={(e) => handleChange(field.name, e.target.value)}
+                    required={field.required}
+                    placeholder={field.placeholder}
+                    rows={field.rows || 3}
                     maxLength={field.maxLength}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors[field.name] ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    error={errors[field.name]}
                   />
                 ) : field.type === "number" ? (
-                  <Input
+                  <UniFieldInput
                     type="number"
-                    id={field.name}
-                    placeholder={field.placeholder}
+                    label={field.label}
                     value={formData[field.name] || ''}
                     onChange={(e) => handleChange(field.name, e.target.value)}
+                    required={field.required}
+                    placeholder={field.placeholder}
                     min="0"
                     step="0.01"
-                    className={errors[field.name] ? 'border-red-500' : ''}
+                    error={errors[field.name]}
                   />
                 ) : field.type === "readonly" ? (
-                  <Input
+                  <UniFieldInput
                     type="text"
-                    id={field.name}
-                    placeholder={field.placeholder}
+                    label={field.label}
                     value={formData[field.name] || ''}
                     readOnly
-                    className={`bg-gray-100 cursor-not-allowed ${errors[field.name] ? 'border-red-500' : ''}`}
-                  />
-                ) : (
-                  <Input
-                    type={field.type || "text"}
-                    id={field.name}
                     placeholder={field.placeholder}
+                    error={errors[field.name]}
+                  />
+                ) : field.type === "radio" && field.options ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{field.label}</span>
+                      {field.required && <span className="text-red-500">*</span>}
+                    </div>
+                    <ButtonGroup>
+                      {field.options.map((option) => (
+                        <Button
+                          key={option.value}
+                          type="button"
+                          variant={formData[field.name] === option.value.toString() ? "secondary" : "outline"}
+                          onClick={() => handleChange(field.name, option.value.toString())}
+                          className={`flex-1 ${formData[field.name] === option.value.toString() ? "bg-blue-500 text-white hover:bg-blue-600" : ""} ${errors[field.name] ? 'border-red-500' : ''}`}
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
+                    </ButtonGroup>
+                    {errors[field.name] && (
+                      <p className="text-sm text-red-500">{errors[field.name]}</p>
+                    )}
+                  </div>
+                ) : (
+                  <UniFieldInput
+                    type={field.type || "text"}
+                    label={field.label}
                     value={formData[field.name] || ''}
                     onChange={(e) => handleChange(field.name, e.target.value)}
+                    required={field.required}
+                    placeholder={field.placeholder}
                     maxLength={field.maxLength}
-                    className={errors[field.name] ? 'border-red-500' : ''}
+                    error={errors[field.name]}
                   />
-                )}
-
-                {errors[field.name] && (
-                  <p className="text-sm text-red-500">{errors[field.name]}</p>
                 )}
                 
                 {field.note && (

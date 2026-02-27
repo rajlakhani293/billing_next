@@ -12,7 +12,6 @@ import { SelectItem } from "@/components/ui/select";
 import { ArrowRightIcon, CirclePlusIcon, LeftIcon } from "@/components/AppIcon";
 import { CategoryForm } from "@/app/(dashboard)/inventory/categories/createUpdate";
 import { UnitForm } from "@/app/(dashboard)/inventory/units/createUpdate";
-import { TaxForm } from "@/app/(dashboard)/settings/taxes/createUpdate";
 import { BrandForm } from "@/app/(dashboard)/settings/brands/createUpdate";
 import { settings } from "@/lib/api/settings";
 import { MultipleImageUpload } from "@/components/ui/multiple-image-upload";
@@ -29,12 +28,10 @@ export default function ItemPage() {
   const [getItemData] = items.useGetItemByIdMutation();
   const [getCategories] = items.useGetItemCategoriesDropdownMutation();
   const [getUnits] = items.useGetItemUnitsDropdownMutation();
-  const [getTaxes] = settings.useGetTaxesDropdownMutation();
   const [getBrands] = settings.useGetBrandsDropdownMutation();
 
   const [categories, setCategories] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
-  const [taxes, setTaxes] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(isEdit);
@@ -78,31 +75,22 @@ export default function ItemPage() {
       step: 0.01
     },
     {
-      name: "tax",
-      label: "Tax Rate",
-      type: "select",
-      placeholder: "Select Tax Rate",
-      required: true,
-      options: taxes
+      name: "opening_stock",
+      label: "Opening Stock",
+      type: "number",
+      placeholder: "0.00",
+      min: 0,
+      step: 0.01
     },
-    // {
-    //   name: "opening_stock",
-    //   label: "Opening Stock",
-    //   type: "number",
-    //   placeholder: "0.00",
-    //   required: true,
-    //   min: 0,
-    //   step: 0.01
-    // },
-    // {
-    //   name: "min_stock_level",
-    //   label: "Minimum Stock Level",
-    //   type: "number",
-    //   placeholder: "0.00",
-    //   required: true,
-    //   min: 0,
-    //   step: 0.01
-    // },
+    {
+      name: "min_stock_level",
+      label: "Minimum Stock Level",
+      type: "number",
+      placeholder: "0.00",
+      required: true,
+      min: 0,
+      step: 0.01
+    },
     {
       name: "primary_unit_id",
       label: "Primary Unit",
@@ -118,11 +106,6 @@ export default function ItemPage() {
       placeholder: "0.00",
       min: 0,
       step: 0.01
-    },
-    {
-      name: "hsn_code",
-      label: "HSN Code",
-      placeholder: "Enter HSN Code"
     },
     {
       name: "brand",
@@ -243,7 +226,6 @@ export default function ItemPage() {
           ...baseValues,
           category_id: data.category?.toString() || "",
           primary_unit_id: data.primary_unit?.toString() || "",
-          tax: data.tax?.toString() || "",
           item_images_metadata: data.item_images || [],
           item_images_files: {}
         });
@@ -260,10 +242,9 @@ export default function ItemPage() {
     if (categories.length > 0 && units.length > 0) return;
     
     try {
-      const [categoriesResult, unitsResult, taxesResult, brandsResult] = await Promise.all([
+      const [categoriesResult, unitsResult, brandsResult] = await Promise.all([
         getCategories({}).unwrap(),
         getUnits({}).unwrap(),
-        getTaxes({}).unwrap(),
         getBrands({}).unwrap()
       ]);
       
@@ -275,16 +256,12 @@ export default function ItemPage() {
         label: item.unit_name,
         value: item.id
       })) || []);
-      setTaxes((taxesResult as any)?.data?.map((item: any) => ({
-        label: `${item.tax_name} (${item.tax_value}%)`,
-        value: item.id,
-      })) || []);
       setBrands((brandsResult as any)?.data?.map((item: any) => ({
         label: item.brand_name,
         value: item.id
       })) || []);
     } catch (error) {
-      console.error("Failed to fetch categories, units, taxes, and brands:", error);
+      console.error("Failed to fetch categories, units and brands:", error);
     }
   };
 
@@ -464,15 +441,12 @@ export default function ItemPage() {
                   </div>
                 </div>
 
-                {/* Pricing & Tax */}
+                {/* Pricing  */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing & Tax</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {Schema.filter(field => ['purchase_price', 'selling_price', 'tax'].includes(field.name)).map((field) => (
+                    {Schema.filter(field => ['purchase_price', 'selling_price'].includes(field.name)).map((field) => (
                       <div key={field.name}>
-                        {field.name === 'tax' ? (
-                          <SelectWithAddButton field={field} formType="tax" />
-                        ) : (
                           <UniFieldInput
                             label={field.label}
                             type={field.type}
@@ -484,7 +458,6 @@ export default function ItemPage() {
                             step={field.step}
                             error={errors[field.name]}
                           />
-                        )}
                       </div>
                     ))}
                   </div>
@@ -494,7 +467,7 @@ export default function ItemPage() {
                 <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Inventory & Compliance</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {Schema.filter(field => ['hsn_code', 'primary_unit_id', 'item_weight'].includes(field.name)).map((field) => (
+                    {Schema.filter(field => ['opening_stock', 'primary_unit_id', 'item_weight'].includes(field.name)).map((field) => (
                       <div key={field.name}>
                         {field.name === 'primary_unit_id' ? (
                           <SelectWithAddButton field={field} formType="unit" />
@@ -615,13 +588,6 @@ export default function ItemPage() {
           onSuccess={handleAddFormSuccess}
           id={selectedId?.id}
           title={selectedId ? `Edit Item Unit` : `Add Item Unit`}
-        />
-        <TaxForm
-          isOpen={addFormOpen === 'tax'}
-          onClose={handleCloseAddForm}
-          onSuccess={handleAddFormSuccess}
-          id={selectedId?.id}
-          title={selectedId ? `Edit Tax` : `Add Tax`}
         />
         <BrandForm
           isOpen={addFormOpen === 'brand'}

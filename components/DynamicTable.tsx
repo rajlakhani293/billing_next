@@ -648,7 +648,7 @@ const DynamicTable = ({
                         : "cursor-default"
                     )}
                   >
-                    <div className={cn("flex items-center gap-2", col.key === "sr_no" && "justify-center")}>
+                    <div className={cn("flex items-center gap-1", col.key === "sr_no" && "justify-center")}>
                       <div className="flex flex-col py-2">
                         <span className={cn(
                           "font-medium",
@@ -665,12 +665,12 @@ const DynamicTable = ({
                       {sortableFields.includes(col.key) && (
                         sortConfig.key === col.key ? (
                           sortConfig.direction === "ascending" ? (
-                            <UpIcon className="w-3 h-3 text-primary" />
+                            <UpIcon className="size-3" />
                           ) : (
-                            <DownIcon className="w-3 h-3 text-primary" />
+                            <DownIcon className="size-3" />
                           )
                         ) : (
-                          <ArrowUpDownIcon className="w-3 h-3 text-muted-foreground opacity-50" />
+                          <ArrowUpDownIcon className="size-3" />
                         )
                       )}
                     </div>

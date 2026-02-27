@@ -2,12 +2,10 @@
 
 import React from "react"
 import { cn } from "@/lib/utils"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectGroup,
-  SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"

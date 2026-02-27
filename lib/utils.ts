@@ -95,7 +95,7 @@ export const getDateRange = (range: string) => {
 export type FormField = {
   name: string;
   label: string;
-  type?: "text" | "number" | "select" | "textarea" | "switch" | "date" | "hidden" | "readonly" | "radio";
+  type?: "text" | "number" | "select" | "textarea" | "switch" | "date" | "hidden" | "readonly" | "radio" | "email";
   placeholder?: string;
   required?: boolean;
   defaultValue?: any;
@@ -168,8 +168,5 @@ export const buildPayload = (
       payload[field.name] = values[field.name];
     }
   });
-
-  // Add meta fields if needed, or process specific logic
-  // For now, simply returning the values filtered by schema
   return payload;
 };

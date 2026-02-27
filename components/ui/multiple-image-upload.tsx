@@ -140,9 +140,10 @@ export function MultipleImageUpload({
     syncImageData();
   }, [frontImagesState, rearImagesState, otherImagesState]);
 
-  // Sync initial images when they change (e.g., after fetch)
   useEffect(() => {
-    if (initialImages && initialImages.length > 0 && !hasInitialized.current) {
+    if (hasInitialized.current) return;
+    
+    if (initialImages && initialImages.length > 0) {
       const front: ImageFile[] = [];
       const rear: ImageFile[] = [];
       const other: ImageFile[] = [];
@@ -166,8 +167,9 @@ export function MultipleImageUpload({
       setFrontImagesState(front);
       setRearImagesState(rear);
       setOtherImagesState(other);
-      hasInitialized.current = true;
     }
+    
+    hasInitialized.current = true;
   }, [initialImages]);
 
   // Front Image Handlers

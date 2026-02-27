@@ -8,6 +8,7 @@ import {
   FaArrowRight,
   FaImage,
   FaSalesforce,
+  FaTag,
 } from 'react-icons/fa';
 import {  MdCancel, MdOutlineInventory2, MdDelete} from 'react-icons/md';
 import { AiOutlineDashboard, AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
@@ -20,6 +21,8 @@ import { FiEdit, FiMoreVertical } from "react-icons/fi";
 import { BiSearchAlt2 } from "react-icons/bi";
 import { HiOutlineCalendar } from "react-icons/hi";
 import { RiLoader2Line } from "react-icons/ri";
+import { BsPersonPlusFill } from 'react-icons/bs';
+import { TbReceiptTax } from "react-icons/tb";
 
 export const CheckCircleIcon = FaCheckCircle;
 export const ViewIcon = AiOutlineEye;
@@ -79,6 +82,9 @@ export const ArrowRightIcon = FaArrowRight;
 export const ImageIcon = FaImage;
 export const MutipleImageIcon = IoImagesOutline;
 export const EyeIcon = IoMdEye;
+export const PersonPlusIcon = BsPersonPlusFill;
+export const TagIcon = FaTag;
+export const TaxIcon = TbReceiptTax;
 
 export const ImagePlusIcon = ({ className = "" }: { className?: string }) => (
   <svg 
